@@ -8,6 +8,7 @@ import {
   numeric,
   uniqueIndex,
   index,
+  integer,
 } from "drizzle-orm/pg-core";
 import { sql } from "drizzle-orm";
 
@@ -105,5 +106,43 @@ export const bookings = pgTable(
     workspaceIdx: index("idx_bookings_workspace").on(table.workspaceId),
     sourceEventIdx: index("idx_bookings_source_event").on(table.sourceEventId),
     statusIdx: index("idx_bookings_status").on(table.status),
+  })
+);
+
+export const workspaceProfiles = pgTable(
+  "workspace_profiles",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    workspaceId: uuid("workspace_id")
+      .notNull()
+      .unique()
+      .references(() => workspaces.id, { onDelete: "cascade" }),
+    businessName: text("business_name").notNull(),
+    vertical: text("vertical").notNull(),
+    yearsInBusiness: integer("years_in_business"),
+    phoneNumber: text("phone_number").notNull(),
+    bookingUrl: text("booking_url"),
+    serviceAreaDescription: text("service_area_description"),
+    serviceAreaZipCodes: text("service_area_zip_codes").array(),
+    hoursJson: jsonb("hours_json").notNull().default(
+      sql`'{"mon":{"open":"08:00","close":"18:00"},"tue":{"open":"08:00","close":"18:00"},"wed":{"open":"08:00","close":"18:00"},"thu":{"open":"08:00","close":"18:00"},"fri":{"open":"08:00","close":"18:00"},"sat":{"open":"09:00","close":"15:00"},"sun":{"open":"","close":""},"emergency_available":false}'::jsonb`
+    ),
+    timezone: text("timezone").notNull().default("America/Chicago"),
+    voicePersona: text("voice_persona").notNull().default("friendly"),
+    brandTone: text("brand_tone").notNull().default("warm"),
+    operatorPhoneE164: text("operator_phone_e164"),
+    operatorEmail: text("operator_email"),
+    companyAddress: text("company_address"),
+    onboardingCompletedAt: timestamp("onboarding_completed_at"),
+    onboardingStep: integer("onboarding_step").notNull().default(0),
+    details: jsonb("details").notNull().default(sql`'{}'::jsonb`),
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+    updatedAt: timestamp("updated_at").defaultNow().notNull(),
+  },
+  (table) => ({
+    workspaceIdIdx: uniqueIndex("idx_workspace_profiles_workspace_id").on(
+      table.workspaceId
+    ),
+    updatedAtIdx: index("idx_workspace_profiles_updated").on(table.updatedAt),
   })
 );

@@ -2,6 +2,7 @@ import { redirect } from "next/navigation";
 import { auth } from "@clerk/nextjs/server";
 import { getWorkspaceForAuth } from "@/lib/auth/workspace";
 import { UserButton, OrganizationSwitcher } from "@clerk/nextjs";
+import { getProfileByWorkspaceId } from "@/lib/profile/queries";
 
 export default async function DashboardLayout({
   children,
@@ -16,6 +17,12 @@ export default async function DashboardLayout({
 
   const workspace = await getWorkspaceForAuth();
   if (!workspace) {
+    redirect("/onboarding");
+  }
+
+  // Check if profile onboarding is complete
+  const profile = await getProfileByWorkspaceId(workspace.id);
+  if (!profile || !profile.onboardingCompletedAt) {
     redirect("/onboarding");
   }
 
