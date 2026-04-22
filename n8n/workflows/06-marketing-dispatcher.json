@@ -1,0 +1,286 @@
+{
+  "name": "Chatty — Marketing Dispatcher (WF6)",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "chatty-marketing-send",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "n1-webhook-trigger",
+      "name": "Webhook — Marketing Send Trigger",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [200, 300],
+      "webhookId": "chatty-marketing-send"
+    },
+    {
+      "parameters": {
+        "operation": "select",
+        "schema": { "__rl": true, "mode": "list", "value": "public" },
+        "table": { "__rl": true, "mode": "list", "value": "marketing_touches" },
+        "where": {
+          "conditions": [
+            {
+              "condition": "equals",
+              "leftOperand": "org_id",
+              "rightOperand": "={{ $json.org_id }}"
+            },
+            {
+              "condition": "equals",
+              "leftOperand": "status",
+              "rightOperand": "planned"
+            },
+            {
+              "condition": "lessThanOrEqual",
+              "leftOperand": "send_at",
+              "rightOperand": "={{ $now.toISOString() }}"
+            }
+          ]
+        },
+        "limit": 20,
+        "options": {}
+      },
+      "id": "n2-query-touches",
+      "name": "Postgres — Query Due Touches",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.5,
+      "position": [420, 300],
+      "credentials": {
+        "postgres": { "id": "__REPLACE_ON_IMPORT__", "name": "Chatty Postgres" }
+      }
+    },
+    {
+      "parameters": {
+        "loopOver": "items"
+      },
+      "id": "n3-loop-touches",
+      "name": "Loop — Each Touch",
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [640, 300]
+    },
+    {
+      "parameters": {
+        "operation": "select",
+        "schema": { "__rl": true, "mode": "list", "value": "public" },
+        "table": { "__rl": true, "mode": "list", "value": "consent_events" },
+        "where": {
+          "conditions": [
+            {
+              "condition": "equals",
+              "leftOperand": "org_id",
+              "rightOperand": "={{ $json.org_id }}"
+            },
+            {
+              "condition": "equals",
+              "leftOperand": "contact_phone",
+              "rightOperand": "={{ $json.contact_phone }}"
+            },
+            {
+              "condition": "equals",
+              "leftOperand": "channel",
+              "rightOperand": "sms"
+            },
+            {
+              "condition": "equals",
+              "leftOperand": "action",
+              "rightOperand": "opt_out"
+            }
+          ]
+        },
+        "limit": 1,
+        "options": {}
+      },
+      "id": "n4-check-consent",
+      "name": "Postgres — Check Consent",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.5,
+      "position": [860, 300],
+      "credentials": {
+        "postgres": { "id": "__REPLACE_ON_IMPORT__", "name": "Chatty Postgres" }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "conditions": [
+            {
+              "leftValue": "={{ $json.length }}",
+              "rightValue": 0,
+              "operator": { "type": "number", "operation": "equals" }
+            }
+          ]
+        }
+      },
+      "id": "n5-consent-ok",
+      "name": "IF — Consent OK",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [1080, 300]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.twilio.com/2010-04-01/Accounts/{{ process.env.TWILIO_ACCOUNT_SID }}/Messages.json",
+        "authentication": "basicAuth",
+        "basicAuth": {
+          "user": "={{ process.env.TWILIO_ACCOUNT_SID }}",
+          "password": "={{ process.env.TWILIO_AUTH_TOKEN }}"
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "To",
+              "value": "={{ $('Loop — Each Touch').item.json.contact_phone }}"
+            },
+            {
+              "name": "From",
+              "value": "={{ process.env.TWILIO_PHONE_NUMBER }}"
+            },
+            {
+              "name": "Body",
+              "value": "={{ $('Loop — Each Touch').item.json.body }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "n6-twilio-send",
+      "name": "Twilio — Send SMS",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1280, 200]
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "schema": { "__rl": true, "mode": "list", "value": "public" },
+        "table": { "__rl": true, "mode": "list", "value": "marketing_touches" },
+        "updateKey": "id",
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "id": "={{ $('Loop — Each Touch').item.json.id }}",
+            "status": "sent",
+            "sent_at": "={{ $now.toISOString() }}"
+          }
+        },
+        "options": {}
+      },
+      "id": "n7-update-status",
+      "name": "Postgres — Update Status to Sent",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.5,
+      "position": [1480, 200],
+      "credentials": {
+        "postgres": { "id": "__REPLACE_ON_IMPORT__", "name": "Chatty Postgres" }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "insert",
+        "schema": { "__rl": true, "mode": "list", "value": "public" },
+        "table": { "__rl": true, "mode": "list", "value": "signal_events" },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "org_id": "={{ $json.org_id }}",
+            "source_type": "marketing_sms",
+            "source_id": "={{ $json.contact_phone }}",
+            "event_type": "outbound_sms_sent",
+            "entity_type": "contact",
+            "entity_id": "={{ $json.contact_id }}",
+            "data": "={{ JSON.stringify({ touch_id: $json.id, plan_type: $json.plan_type, body: $json.body }) }}"
+          }
+        },
+        "options": {}
+      },
+      "id": "n8-log-signal",
+      "name": "Postgres — Log Signal Event",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.5,
+      "position": [1480, 280],
+      "credentials": {
+        "postgres": { "id": "__REPLACE_ON_IMPORT__", "name": "Chatty Postgres" }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "schema": { "__rl": true, "mode": "list", "value": "public" },
+        "table": { "__rl": true, "mode": "list", "value": "marketing_touches" },
+        "updateKey": "id",
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "id": "={{ $json.id }}",
+            "status": "opted_out"
+          }
+        },
+        "options": {}
+      },
+      "id": "n9-skip-optout",
+      "name": "Postgres — Mark Opted Out",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.5,
+      "position": [1280, 400],
+      "credentials": {
+        "postgres": { "id": "__REPLACE_ON_IMPORT__", "name": "Chatty Postgres" }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "conditions": [
+            {
+              "leftValue": "={{ $response.status }}",
+              "rightValue": 201,
+              "operator": { "type": "number", "operation": "equals" }
+            }
+          ]
+        }
+      },
+      "id": "n10-twilio-ok",
+      "name": "IF — Twilio Success",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [1480, 150]
+    },
+    {
+      "parameters": {
+        "responseMode": "lastNode"
+      },
+      "id": "n11-respond",
+      "name": "Respond to Webhook",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [1680, 300]
+    }
+  ],
+  "connections": {
+    "n1-webhook-trigger": { "main": [[ { "node": "n2-query-touches", "branch": 0 } ]] },
+    "n2-query-touches": { "main": [[ { "node": "n3-loop-touches", "branch": 0 } ]] },
+    "n3-loop-touches": { "main": [[ { "node": "n4-check-consent", "branch": 0 } ]] },
+    "n4-check-consent": { "main": [[ { "node": "n5-consent-ok", "branch": 0 } ]] },
+    "n5-consent-ok": {
+      "main": [
+        [ { "node": "n6-twilio-send", "branch": 0 } ],
+        [ { "node": "n9-skip-optout", "branch": 0 } ]
+      ]
+    },
+    "n6-twilio-send": { "main": [[ { "node": "n10-twilio-ok", "branch": 0 } ]] },
+    "n10-twilio-ok": {
+      "main": [
+        [ { "node": "n7-update-status", "branch": 0 } ],
+        [ { "node": "n9-skip-optout", "branch": 0 } ]
+      ]
+    },
+    "n7-update-status": { "main": [[ { "node": "n8-log-signal", "branch": 0 } ]] },
+    "n8-log-signal": { "main": [[ { "node": "n11-respond", "branch": 0 } ]] },
+    "n9-skip-optout": { "main": [[ { "node": "n11-respond", "branch": 0 } ]] },
+    "n11-respond": { "main": [[]] }
+  }
+}

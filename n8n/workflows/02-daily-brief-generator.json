@@ -1,0 +1,440 @@
+{
+  "name": "Chatty \u2014 Daily Brief Generator",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "cronExpression",
+              "expression": "0 6 * * *"
+            }
+          ]
+        }
+      },
+      "id": "n1-schedule",
+      "name": "Schedule \u2014 6am Daily",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        200,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT org_id, jsonb_agg(jsonb_build_object('event_type', event_type, 'entity_type', entity_type, 'data', data, 'created_at', created_at) ORDER BY created_at DESC) AS events, COUNT(*) FILTER (WHERE event_type='lead_received') AS new_leads, COUNT(*) FILTER (WHERE event_type='missed_call') AS missed_calls, COUNT(*) FILTER (WHERE event_type='appointment_booked') AS booked FROM signal_events WHERE created_at > NOW() - INTERVAL '24 hours' GROUP BY org_id",
+        "options": {}
+      },
+      "id": "n2-signals",
+      "name": "Postgres \u2014 Pull 24h Signals",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.5,
+      "position": [
+        420,
+        300
+      ],
+      "credentials": {
+        "postgres": {
+          "id": "__REPLACE_ON_IMPORT__",
+          "name": "Chatty Postgres"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.anthropic.com/v1/messages",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "anthropic-version",
+              "value": "2023-06-01"
+            },
+            {
+              "name": "content-type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"model\": \"claude-sonnet-4-6\",\n  \"max_tokens\": 1200,\n  \"system\": \"You are Pass 1 of Chatty AI\\u2019s Decision Engine. Read 24h of home-service signals and identify patterns, anomalies, and risk indicators. Output strict JSON only.\",\n  \"messages\": [{\"role\": \"user\", \"content\": \"Analyze these signals for org {{ $json.org_id }}. Return JSON with keys: patterns (array of strings), anomalies (array), risk_signals (array), opportunity_signals (array), confidence (0-1). Signals: {{ JSON.stringify($json.events) }}\"}]\n}",
+        "options": {}
+      },
+      "id": "n3-pass1",
+      "name": "Claude \u2014 Pass 1 Signal Analysis",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        640,
+        300
+      ],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "__REPLACE_ON_IMPORT__",
+          "name": "Chatty Anthropic"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const r = items[0].json;\nconst text = (r.content && r.content[0] && r.content[0].text) || '{}';\nconst s = text.indexOf('{'), e = text.lastIndexOf('}');\nlet analysis;\ntry { analysis = JSON.parse(text.slice(s, e+1)); } catch(_) { analysis = { patterns: [], anomalies: [], risk_signals: [], opportunity_signals: [], confidence: 0 }; }\nconst signals = $('Postgres \u2014 Pull 24h Signals').first().json;\nreturn [{ json: { org_id: signals.org_id, kpis: { new_leads: signals.new_leads, missed_calls: signals.missed_calls, booked: signals.booked }, pass1: analysis, events: signals.events } }];"
+      },
+      "id": "n4-parse1",
+      "name": "Parse Pass 1",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        860,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.anthropic.com/v1/messages",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "anthropic-version",
+              "value": "2023-06-01"
+            },
+            {
+              "name": "content-type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"model\": \"claude-sonnet-4-6\",\n  \"max_tokens\": 1000,\n  \"system\": \"You are Pass 2. Reason about what Pass 1 patterns mean for a home-service contractor. Decide the top 3-5 highest-ROI actions today. Output strict JSON only.\",\n  \"messages\": [{\"role\": \"user\", \"content\": \"Pass 1 output: {{ JSON.stringify($json.pass1) }}. KPIs: {{ JSON.stringify($json.kpis) }}. Return JSON with keys: bottleneck (one phrase), top_actions (array of 3-5 objects with action, why, expected_impact), rationale (one paragraph).\"}]\n}",
+        "options": {}
+      },
+      "id": "n5-pass2",
+      "name": "Claude \u2014 Pass 2 Pattern Recognition",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1080,
+        300
+      ],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "__REPLACE_ON_IMPORT__",
+          "name": "Chatty Anthropic"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const r = items[0].json;\nconst text = (r.content && r.content[0] && r.content[0].text) || '{}';\nconst s = text.indexOf('{'), e = text.lastIndexOf('}');\nlet pass2;\ntry { pass2 = JSON.parse(text.slice(s, e+1)); } catch(_) { pass2 = { bottleneck: 'unknown', top_actions: [], rationale: '' }; }\nconst prev = $('Parse Pass 1').first().json;\nreturn [{ json: { ...prev, pass2 } }];"
+      },
+      "id": "n6-parse2",
+      "name": "Parse Pass 2",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1300,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.anthropic.com/v1/messages",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "anthropic-version",
+              "value": "2023-06-01"
+            },
+            {
+              "name": "content-type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"model\": \"claude-sonnet-4-6\",\n  \"max_tokens\": 800,\n  \"system\": \"You are Pass 3. Draft a 6am SMS daily brief for a contractor owner. 3-5 bullets, plain English, no jargon. Also draft a 20-second voice summary. Output strict JSON only.\",\n  \"messages\": [{\"role\": \"user\", \"content\": \"KPIs: {{ JSON.stringify($json.kpis) }}. Pass 2: {{ JSON.stringify($json.pass2) }}. Return JSON with keys: sms_text (max 800 chars), voice_summary (80-120 words), priority (high|medium|low), headline (6-8 words).\"}]\n}",
+        "options": {}
+      },
+      "id": "n7-pass3",
+      "name": "Claude \u2014 Pass 3 Brief Generation",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1520,
+        300
+      ],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "__REPLACE_ON_IMPORT__",
+          "name": "Chatty Anthropic"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const r = items[0].json;\nconst text = (r.content && r.content[0] && r.content[0].text) || '{}';\nconst s = text.indexOf('{'), e = text.lastIndexOf('}');\nlet brief;\ntry { brief = JSON.parse(text.slice(s, e+1)); } catch(_) { brief = { sms_text: 'Daily brief unavailable.', voice_summary: '', priority: 'low', headline: 'Brief unavailable' }; }\nconst prev = $('Parse Pass 2').first().json;\nreturn [{ json: { ...prev, brief } }];"
+      },
+      "id": "n8-parse3",
+      "name": "Parse Pass 3",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1740,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://api.elevenlabs.io/v1/text-to-speech/{{ $env.ELEVENLABS_VOICE_ID || '21m00Tcm4TlvDq8ikWAM' }}",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "accept",
+              "value": "audio/mpeg"
+            },
+            {
+              "name": "content-type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"text\": \"{{ $json.brief.voice_summary }}\",\n  \"model_id\": \"eleven_turbo_v2_5\",\n  \"voice_settings\": { \"stability\": 0.55, \"similarity_boost\": 0.75 }\n}",
+        "options": {
+          "response": {
+            "response": {
+              "responseFormat": "file"
+            }
+          }
+        }
+      },
+      "id": "n9-tts",
+      "name": "ElevenLabs \u2014 TTS",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1960,
+        300
+      ],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "__REPLACE_ON_IMPORT__",
+          "name": "Chatty ElevenLabs"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "insert",
+        "schema": {
+          "__rl": true,
+          "mode": "list",
+          "value": "public"
+        },
+        "table": {
+          "__rl": true,
+          "mode": "list",
+          "value": "decision_briefs"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "org_id": "={{ $('Parse Pass 3').first().json.org_id }}",
+            "brief_date": "={{ new Date().toISOString().slice(0,10) }}",
+            "decision_engine_trace": "={{ JSON.stringify({ pass1: $('Parse Pass 3').first().json.pass1, pass2: $('Parse Pass 3').first().json.pass2 }) }}",
+            "recommendations": "={{ JSON.stringify($('Parse Pass 3').first().json.pass2.top_actions || []) }}",
+            "priority": "={{ $('Parse Pass 3').first().json.brief.priority }}",
+            "voice_summary": "={{ $('Parse Pass 3').first().json.brief.voice_summary }}",
+            "delivered_via": "sms"
+          }
+        },
+        "options": {}
+      },
+      "id": "n10-persist",
+      "name": "Postgres \u2014 Insert decision_brief",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.5,
+      "position": [
+        2180,
+        300
+      ],
+      "credentials": {
+        "postgres": {
+          "id": "__REPLACE_ON_IMPORT__",
+          "name": "Chatty Postgres"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "sms",
+        "operation": "send",
+        "from": "={{ $env.TWILIO_PHONE_NUMBER }}",
+        "to": "={{ $env.OPERATOR_PHONE_NUMBER }}",
+        "toWhatsapp": false,
+        "message": "=\u2600\ufe0f {{ $('Parse Pass 3').first().json.brief.headline }}\n\n{{ $('Parse Pass 3').first().json.brief.sms_text }}",
+        "options": {}
+      },
+      "id": "n11-notify",
+      "name": "Twilio \u2014 Deliver Brief",
+      "type": "n8n-nodes-base.twilio",
+      "typeVersion": 1,
+      "position": [
+        2400,
+        300
+      ],
+      "credentials": {
+        "twilioApi": {
+          "id": "__REPLACE_ON_IMPORT__",
+          "name": "Chatty Twilio"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Schedule \u2014 6am Daily": {
+      "main": [
+        [
+          {
+            "node": "Postgres \u2014 Pull 24h Signals",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Postgres \u2014 Pull 24h Signals": {
+      "main": [
+        [
+          {
+            "node": "Claude \u2014 Pass 1 Signal Analysis",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Claude \u2014 Pass 1 Signal Analysis": {
+      "main": [
+        [
+          {
+            "node": "Parse Pass 1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parse Pass 1": {
+      "main": [
+        [
+          {
+            "node": "Claude \u2014 Pass 2 Pattern Recognition",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Claude \u2014 Pass 2 Pattern Recognition": {
+      "main": [
+        [
+          {
+            "node": "Parse Pass 2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parse Pass 2": {
+      "main": [
+        [
+          {
+            "node": "Claude \u2014 Pass 3 Brief Generation",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Claude \u2014 Pass 3 Brief Generation": {
+      "main": [
+        [
+          {
+            "node": "Parse Pass 3",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parse Pass 3": {
+      "main": [
+        [
+          {
+            "node": "ElevenLabs \u2014 TTS",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "ElevenLabs \u2014 TTS": {
+      "main": [
+        [
+          {
+            "node": "Postgres \u2014 Insert decision_brief",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Postgres \u2014 Insert decision_brief": {
+      "main": [
+        [
+          {
+            "node": "Twilio \u2014 Deliver Brief",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "saveExecutionProgress": true,
+    "saveManualExecutions": true,
+    "timezone": "America/Los_Angeles"
+  },
+  "tags": [
+    {
+      "name": "chatty-ai"
+    },
+    {
+      "name": "brief"
+    }
+  ]
+}

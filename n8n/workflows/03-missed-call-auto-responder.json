@@ -1,0 +1,344 @@
+{
+  "name": "Chatty \u2014 Missed Call Auto-Responder",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "chatty-missed-call",
+        "responseMode": "responseNode",
+        "options": {
+          "rawBody": false
+        }
+      },
+      "id": "n1-webhook",
+      "name": "Webhook \u2014 Twilio Status Callback",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        200,
+        300
+      ],
+      "webhookId": "chatty-missed-call"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "conditions": [
+            {
+              "leftValue": "={{ $json.body.CallStatus || $json.CallStatus }}",
+              "rightValue": "no-answer",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "n2-gate",
+      "name": "Gate \u2014 no-answer only",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        420,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const raw = items[0].json.body || items[0].json;\nconst caller = (raw.From || raw.from || '').replace(/[^+0-9]/g, '');\nconst dialed = (raw.To || raw.to || '').replace(/[^+0-9]/g, '');\nconst orgId = raw.org_id || items[0].json.query?.org_id || null;\nif (caller.length === 0) { throw new Error('caller number missing on webhook'); }\nreturn [{ json: { caller, dialed, org_id: orgId, call_sid: raw.CallSid || raw.call_sid, received_at: new Date().toISOString() } }];"
+      },
+      "id": "n3-normalize",
+      "name": "Normalize Call Data",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        640,
+        200
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT COUNT(*) AS prior_calls, MAX(created_at) AS last_contact, (SELECT data FROM signal_events WHERE org_id=$1 AND entity_id=$2 ORDER BY created_at DESC LIMIT 1) AS last_context FROM signal_events WHERE org_id=$1 AND entity_id=$2",
+        "options": {
+          "queryReplacement": "={{ $json.org_id }},{{ $json.caller }}"
+        }
+      },
+      "id": "n4-history",
+      "name": "Postgres \u2014 Caller History",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.5,
+      "position": [
+        860,
+        200
+      ],
+      "credentials": {
+        "postgres": {
+          "name": "Chatty Postgres"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.anthropic.com/v1/messages",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "anthropic-version",
+              "value": "2023-06-01"
+            },
+            {
+              "name": "content-type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"model\": \"claude-haiku-4-5-20251001\",\n  \"max_tokens\": 400,\n  \"system\": \"You draft short, warm SMS replies for home-service contractors who missed a call. Sound like a real person at a local business. 1-2 sentences max. No emoji unless caller is returning. Offer a callback time.\",\n  \"messages\": [{\"role\": \"user\", \"content\": \"Caller: {{ $('Normalize Call Data').first().json.caller }}. Prior calls to this business: {{ $json.prior_calls }}. Last context: {{ JSON.stringify($json.last_context) }}. Draft the SMS reply. Return JSON with keys: sms (the text to send), tone (first_time|returning|urgent). Output strict JSON.\"}]\n}",
+        "options": {}
+      },
+      "id": "n5-draft",
+      "name": "Claude \u2014 Draft Reply",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1080,
+        200
+      ],
+      "credentials": {
+        "httpHeaderAuth": {
+          "name": "Chatty Anthropic"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const r = items[0].json;\nconst text = (r.content && r.content[0] && r.content[0].text) || '{}';\nconst s = text.indexOf('{'), e = text.lastIndexOf('}');\nlet parsed;\ntry { parsed = JSON.parse(text.slice(s, e+1)); } catch(_) { parsed = { sms: 'Hi \u2014 sorry we missed your call. Reply here or call back and we will pick up. Thanks.', tone: 'first_time' }; }\nconst call = $('Normalize Call Data').first().json;\nreturn [{ json: { ...call, reply: parsed } }];"
+      },
+      "id": "n6-parse",
+      "name": "Parse Reply",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1300,
+        200
+      ]
+    },
+    {
+      "parameters": {
+        "resource": "sms",
+        "operation": "send",
+        "from": "={{ $json.dialed }}",
+        "to": "={{ $json.caller }}",
+        "toWhatsapp": false,
+        "message": "={{ $json.reply.sms }}",
+        "options": {}
+      },
+      "id": "n7-send",
+      "name": "Twilio \u2014 Send SMS",
+      "type": "n8n-nodes-base.twilio",
+      "typeVersion": 1,
+      "position": [
+        1520,
+        200
+      ],
+      "credentials": {
+        "twilioApi": {
+          "name": "Chatty Twilio"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "insert",
+        "schema": {
+          "__rl": true,
+          "mode": "list",
+          "value": "public"
+        },
+        "table": {
+          "__rl": true,
+          "mode": "list",
+          "value": "signal_events"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "org_id": "={{ $('Parse Reply').first().json.org_id }}",
+            "source_type": "twilio_voice",
+            "source_id": "={{ $('Parse Reply').first().json.call_sid }}",
+            "event_type": "missed_call_recovered",
+            "entity_type": "caller",
+            "entity_id": "={{ $('Parse Reply').first().json.caller }}",
+            "data": "={{ JSON.stringify({ caller: $('Parse Reply').first().json.caller, dialed: $('Parse Reply').first().json.dialed, reply_sms: $('Parse Reply').first().json.reply.sms, tone: $('Parse Reply').first().json.reply.tone, received_at: $('Parse Reply').first().json.received_at }) }}"
+          }
+        },
+        "options": {}
+      },
+      "id": "n8-log",
+      "name": "Postgres \u2014 Log Recovery",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.5,
+      "position": [
+        1740,
+        200
+      ],
+      "credentials": {
+        "postgres": {
+          "name": "Chatty Postgres"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ JSON.stringify({ ok: true, recovered: true, sms_sent: $('Parse Reply').first().json.reply.sms }) }}",
+        "options": {}
+      },
+      "id": "n9-respond",
+      "name": "Respond",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [
+        1960,
+        200
+      ]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ JSON.stringify({ ok: true, skipped: 'not_no_answer' }) }}",
+        "options": {}
+      },
+      "id": "n10-skip",
+      "name": "Respond \u2014 Skipped",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [
+        640,
+        400
+      ]
+    }
+  ],
+  "connections": {
+    "Webhook \u2014 Twilio Status Callback": {
+      "main": [
+        [
+          {
+            "node": "Gate \u2014 no-answer only",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Gate \u2014 no-answer only": {
+      "main": [
+        [
+          {
+            "node": "Normalize Call Data",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Respond \u2014 Skipped",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Normalize Call Data": {
+      "main": [
+        [
+          {
+            "node": "Postgres \u2014 Caller History",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Postgres \u2014 Caller History": {
+      "main": [
+        [
+          {
+            "node": "Claude \u2014 Draft Reply",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Claude \u2014 Draft Reply": {
+      "main": [
+        [
+          {
+            "node": "Parse Reply",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parse Reply": {
+      "main": [
+        [
+          {
+            "node": "Twilio \u2014 Send SMS",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Twilio \u2014 Send SMS": {
+      "main": [
+        [
+          {
+            "node": "Postgres \u2014 Log Recovery",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Postgres \u2014 Log Recovery": {
+      "main": [
+        [
+          {
+            "node": "Respond",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "saveExecutionProgress": true,
+    "saveManualExecutions": true
+  },
+  "tags": [
+    {
+      "name": "chatty-ai"
+    },
+    {
+      "name": "voice"
+    },
+    {
+      "name": "recovery"
+    }
+  ]
+}

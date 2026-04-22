@@ -1,0 +1,300 @@
+{
+  "name": "Chatty — ElevenLabs Post-Call Processor",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "chatty-voice-post-call",
+        "responseMode": "responseNode",
+        "options": {
+          "rawBody": false
+        }
+      },
+      "id": "n1-webhook",
+      "name": "Webhook — ElevenLabs Post-Call",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        200,
+        300
+      ],
+      "webhookId": "chatty-voice-post-call"
+    },
+    {
+      "parameters": {
+        "jsCode": "// ElevenLabs Conversational AI post-call payload shape:\n// { agent_id, conversation_id, call_sid?, transcript: [{role,message}], metadata, duration_seconds, ... }\n// Our outbound dialer (WF5) adds extra top-level fields: { direction, org_id, caller, dialed }.\nconst raw = items[0].json.body || items[0].json;\nconst transcript = (raw.transcript || raw.conversation || []).map(t => `${t.role || t.speaker || '?'}: ${t.message || t.text || ''}`).join('\\n');\nconst direction = raw.direction || (raw.metadata && raw.metadata.direction) || 'inbound';\nconst callerNumber = raw.caller || (raw.metadata && raw.metadata.caller) || raw.from || null;\nconst dialedNumber = raw.dialed || (raw.metadata && raw.metadata.dialed) || raw.to || null;\nconst orgId = raw.org_id || (raw.metadata && raw.metadata.org_id) || null;\nconst callSid = raw.call_sid || raw.conversation_id || null;\nconst durationSec = raw.duration_seconds || raw.call_duration_secs || 0;\nif (!transcript || transcript.length < 4) { throw new Error('empty transcript — nothing to process'); }\nreturn [{ json: { transcript, direction, caller: callerNumber, dialed: dialedNumber, org_id: orgId, call_sid: callSid, duration_sec: durationSec, agent_id: raw.agent_id || null, received_at: new Date().toISOString() } }];"
+      },
+      "id": "n2-normalize",
+      "name": "Normalize Call Payload",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        420,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.anthropic.com/v1/messages",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "anthropic-version",
+              "value": "2023-06-01"
+            },
+            {
+              "name": "content-type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"model\": \"claude-sonnet-4-6\",\n  \"max_tokens\": 800,\n  \"system\": \"You are a home-service contractor's dispatcher. Extract structured lead data from voice-call transcripts. Score intent 1-10 (10 = ready to book today). Be conservative — don't inflate. Output STRICT JSON with keys: intent_score (int 1-10), service_type (roofing|hvac|solar|siding|remodeling|other|unknown), timeline (today|this_week|this_month|longer|unknown), budget_signal (low|mid|high|unknown), address (string or null), caller_name (string or null), concerns (array of short strings), suggested_action (call_back_today|schedule_inspection|send_quote|nurture|decline), summary (1 sentence), urgency_reason (string or null).\",\n  \"messages\": [{\"role\": \"user\", \"content\": \"Direction: {{ $json.direction }}. Duration: {{ $json.duration_sec }}s.\\n\\nTranscript:\\n{{ $json.transcript }}\\n\\nReturn strict JSON only.\"}]\n}",
+        "options": {}
+      },
+      "id": "n3-extract",
+      "name": "Claude — Extract Lead Data",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        640,
+        300
+      ],
+      "credentials": {
+        "httpHeaderAuth": {
+          "name": "Chatty Anthropic"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const r = items[0].json;\nconst text = (r.content && r.content[0] && r.content[0].text) || '{}';\nconst s = text.indexOf('{'), e = text.lastIndexOf('}');\nlet parsed;\ntry { parsed = JSON.parse(text.slice(s, e+1)); } catch(_) { parsed = { intent_score: 3, service_type: 'unknown', timeline: 'unknown', suggested_action: 'nurture', summary: 'parse_failed' }; }\nconst call = $('Normalize Call Payload').first().json;\nreturn [{ json: { ...call, lead: parsed } }];"
+      },
+      "id": "n4-parse",
+      "name": "Parse Extraction",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        860,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "insert",
+        "schema": {
+          "__rl": true,
+          "mode": "list",
+          "value": "public"
+        },
+        "table": {
+          "__rl": true,
+          "mode": "list",
+          "value": "signal_events"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "org_id": "={{ $json.org_id }}",
+            "source_type": "elevenlabs_voice",
+            "source_id": "={{ $json.call_sid }}",
+            "event_type": "={{ $json.direction === 'outbound' ? 'outbound_call_completed' : 'inbound_call_qualified' }}",
+            "entity_type": "caller",
+            "entity_id": "={{ $json.caller || 'unknown' }}",
+            "data": "={{ JSON.stringify({ direction: $json.direction, caller: $json.caller, dialed: $json.dialed, agent_id: $json.agent_id, duration_sec: $json.duration_sec, transcript: $json.transcript, lead: $json.lead, received_at: $json.received_at }) }}"
+          }
+        },
+        "options": {}
+      },
+      "id": "n5-insert",
+      "name": "Postgres — Log Call Signal",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.5,
+      "position": [
+        1080,
+        300
+      ],
+      "credentials": {
+        "postgres": {
+          "name": "Chatty Postgres"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "conditions": [
+            {
+              "leftValue": "={{ $('Parse Extraction').first().json.lead.intent_score }}",
+              "rightValue": 7,
+              "operator": {
+                "type": "number",
+                "operation": "gte"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "n6-gate",
+      "name": "Hot Lead Gate (>= 7)",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        1300,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "resource": "sms",
+        "operation": "send",
+        "from": "={{ $env.TWILIO_PHONE_NUMBER }}",
+        "to": "={{ $env.OPERATOR_PHONE_NUMBER }}",
+        "toWhatsapp": false,
+        "message": "=HOT CALL ({{ $('Parse Extraction').first().json.direction }}) — {{ $('Parse Extraction').first().json.lead.service_type }} / score {{ $('Parse Extraction').first().json.lead.intent_score }}/10\nCaller: {{ $('Parse Extraction').first().json.caller }}\nTimeline: {{ $('Parse Extraction').first().json.lead.timeline }}\n\"{{ $('Parse Extraction').first().json.lead.summary }}\"\nAction: {{ $('Parse Extraction').first().json.lead.suggested_action }}",
+        "options": {}
+      },
+      "id": "n7-alert",
+      "name": "Twilio — Alert Operator",
+      "type": "n8n-nodes-base.twilio",
+      "typeVersion": 1,
+      "position": [
+        1520,
+        200
+      ],
+      "credentials": {
+        "twilioApi": {
+          "name": "Chatty Twilio"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ JSON.stringify({ ok: true, logged: true, intent_score: $('Parse Extraction').first().json.lead.intent_score, alerted: $('Parse Extraction').first().json.lead.intent_score >= 7 }) }}",
+        "options": {}
+      },
+      "id": "n8-respond-hot",
+      "name": "Respond — Hot",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [
+        1740,
+        200
+      ]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ JSON.stringify({ ok: true, logged: true, intent_score: $('Parse Extraction').first().json.lead.intent_score, alerted: false }) }}",
+        "options": {}
+      },
+      "id": "n9-respond-cold",
+      "name": "Respond — Cold",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [
+        1520,
+        400
+      ]
+    }
+  ],
+  "connections": {
+    "Webhook — ElevenLabs Post-Call": {
+      "main": [
+        [
+          {
+            "node": "Normalize Call Payload",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Normalize Call Payload": {
+      "main": [
+        [
+          {
+            "node": "Claude — Extract Lead Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Claude — Extract Lead Data": {
+      "main": [
+        [
+          {
+            "node": "Parse Extraction",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parse Extraction": {
+      "main": [
+        [
+          {
+            "node": "Postgres — Log Call Signal",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Postgres — Log Call Signal": {
+      "main": [
+        [
+          {
+            "node": "Hot Lead Gate (>= 7)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Hot Lead Gate (>= 7)": {
+      "main": [
+        [
+          {
+            "node": "Twilio — Alert Operator",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Respond — Cold",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Twilio — Alert Operator": {
+      "main": [
+        [
+          {
+            "node": "Respond — Hot",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "saveExecutionProgress": true,
+    "saveManualExecutions": true
+  }
+}

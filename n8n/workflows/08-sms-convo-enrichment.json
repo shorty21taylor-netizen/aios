@@ -1,0 +1,70 @@
+{
+  "name": "AIOS — SMS Conversation Enrichment (WF8)",
+  "description": "Async enrichment of SMS conversations. Fetches tenant profile, composes Claude system prompt from profile + conversation, calls Anthropic direct via HTTP, reports summary event to AIOS. Canonical 5-node pattern: profile -> prompt -> Claude -> act -> event.",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "aios-sms-convo-enrich",
+        "responseMode": "onReceived"
+      },
+      "id": "webhook-sms-enrich",
+      "name": "Webhook: SMS Convo Enrichment",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [100, 300]
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "={{ $env.AIOS_URL }}/api/profile/by-key",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "Authorization", "value": "=Bearer {{ $env.AIOS_WORKSPACE_KEY }}" }
+          ]
+        },
+        "options": {}
+      },
+      "id": "fetch-profile",
+      "name": "AIOS: Fetch Tenant Profile",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [300, 300]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Build the Claude system prompt from tenant profile + conversation payload.\n// Returns { system, user } for the Anthropic Messages API.\nconst profile = $input.first().json;\nconst webhook = $node['Webhook: SMS Convo Enrichment'].json;\n\nconst conversation = webhook.conversation_history || '';\nconst contactPhone = webhook.contact_phone || '';\nconst priorTouches = webhook.prior_touches || 0;\n\nconst businessName = profile.business_name || 'the business';\nconst vertical = profile.vertical || 'home services';\nconst voicePersona = profile.voice_persona || 'professional';\nconst brandTone = profile.brand_tone || 'warm';\nconst faqs = (profile.details?.top_faqs || []).slice(0, 8);\nconst objections = (profile.details?.common_objections || []).slice(0, 6);\nconst bookingRules = profile.details?.booking_rules || {};\n\nconst systemLines = [\n  `You are the SMS conversation analyst for ${businessName}, a ${vertical} contractor.`,\n  `Voice persona: ${voicePersona}. Brand tone: ${brandTone}.`,\n  '',\n  'Your job: read the SMS thread and output a single JSON object summarizing it for the decision engine.',\n  '',\n  'Output JSON keys (no prose outside the JSON):',\n  '  intent:        string - book, reschedule, price_inquiry, complaint, info, other',\n  '  bookingScore:  integer 0-10 - likelihood they book in the next 7 days',\n  '  urgency:       low | medium | high',\n  '  sentiment:     negative | neutral | positive',\n  '  actionItems:   string[] - 1-5 short follow-ups for the operator',\n  '  objectionFlag: null OR a label from KNOWN_OBJECTIONS if raised'\n];\n\nif (faqs.length) {\n  systemLines.push('', 'Top FAQs for this business (context only, do not answer them here):');\n  for (const f of faqs) systemLines.push(`  - ${f.question || f}`);\n}\nif (objections.length) {\n  systemLines.push('', 'KNOWN_OBJECTIONS:');\n  for (const o of objections) systemLines.push(`  - ${o.label || o}`);\n}\nif (bookingRules && Object.keys(bookingRules).length) {\n  systemLines.push('', 'Booking rules:');\n  for (const [k, v] of Object.entries(bookingRules)) systemLines.push(`  - ${k}: ${v}`);\n}\n\nconst system = systemLines.join('\\n');\nconst user = [\n  'Analyze this SMS thread and return ONLY the JSON described above.',\n  '',\n  `Customer phone: ${contactPhone}`,\n  `Prior touches with this customer: ${priorTouches}`,\n  '',\n  'Thread:',\n  conversation\n].join('\\n');\n\nreturn [{ json: { system, user, profile } }];"
+      },
+      "id": "build-prompt",
+      "name": "Code: Build Claude Prompt",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [500, 300]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.anthropic.com/v1/messages",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "x-api-key", "value": "={{ $env.ANTHROPIC_API_KEY }}" },
+            { "name": "anthropic-version", "value": "2023-06-01" },
+            { "name": "content-type", "value": "application/json" }
+          ]
+        },
+        "sendBody": true,
+        "contentType": "json",
+        "jsonBody": "={\n  \"model\": \"claude-sonnet-4-6\",\n  \"max_tokens\": 1024,\n  \"system\": {{ JSON.stringify($json.system) }},\n  \"messages\": [\n    { \"role\": \"user\", \"content\": {{ JSON.stringify($json.user) }} }\n  ]\n}",
+        "options": {}
+      },
+      "id": "claude-enrich",
+      "name": "HTTP: Claude Messages API",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [700, 300]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Parse Claude JSON output, build AIOS event payload.\nconst

@@ -1,0 +1,303 @@
+{
+  "name": "WF7 Email Dispatcher",
+  "nodes": [
+    {
+      "parameters": {
+        "path": "chatty-email-send",
+        "responseMode": "onReceived",
+        "options": {}
+      },
+      "id": "webhook",
+      "name": "Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [250, 300]
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT id, org_id, contact_email, subject, body, created_at FROM marketing_touches WHERE org_id = $1 AND status = 'planned' AND channel = 'email' AND send_at <= NOW() LIMIT 20",
+        "queryParams": ["{{ $json.org_id }}"]
+      },
+      "id": "postgres_fetch",
+      "name": "Fetch Pending Emails",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 1,
+      "position": [450, 300],
+      "credentials": {
+        "postgres": "Chatty Postgres"
+      }
+    },
+    {
+      "parameters": {
+        "loopOver": "=queryResult"
+      },
+      "id": "batch_loop",
+      "name": "SplitInBatches",
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 1,
+      "position": [650, 300],
+      "options": {
+        "batchSize": 5
+      }
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT action FROM consent_events WHERE org_id = $1 AND contact_email = $2 AND channel = 'email' AND action = 'opt_out' AND created_at > $3 ORDER BY created_at DESC LIMIT 1",
+        "queryParams": [
+          "{{ $json.org_id }}",
+          "{{ $json.contact_email }}",
+          "{{ $json.created_at }}"
+        ]
+      },
+      "id": "consent_recheck",
+      "name": "Consent Recheck",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 1,
+      "position": [850, 300],
+      "credentials": {
+        "postgres": "Chatty Postgres"
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "stringConditions": [
+            {
+              "value1": "{{ $json.queryResult.length }}",
+              "condition": "equal",
+              "value2": "0"
+            }
+          ]
+        }
+      },
+      "id": "if_consent_valid",
+      "name": "IF consent valid",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [1050, 300]
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "UPDATE marketing_touches SET status = 'opted_out' WHERE id = $1",
+        "queryParams": ["{{ $json.id }}"]
+      },
+      "id": "mark_opted_out",
+      "name": "Mark Opted Out",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 1,
+      "position": [1250, 200],
+      "credentials": {
+        "postgres": "Chatty Postgres"
+      }
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT default_from_email, default_from_name FROM sending_domains WHERE org_id = $1 AND status = 'verified' LIMIT 1",
+        "queryParams": ["{{ $json.org_id }}"]
+      },
+      "id": "resolve_from_address",
+      "name": "Resolve From Address",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 1,
+      "position": [1250, 400],
+      "credentials": {
+        "postgres": "Chatty Postgres"
+      }
+    },
+    {
+      "parameters": {
+        "assignments": [
+          {
+            "name": "unsubscribe_token",
+            "type": "string",
+            "value": "=require('crypto').createHmac('sha256', $env.EMAIL_UNSUBSCRIBE_SECRET).update($json.contact_email + ':' + $json.org_id).digest('hex')"
+          },
+          {
+            "name": "unsubscribe_url",
+            "type": "string",
+            "value": "={{ $env.NEXT_PUBLIC_APP_URL }}/unsubscribe?token={{ $json.unsubscribe_token }}"
+          }
+        ]
+      },
+      "id": "generate_unsubscribe",
+      "name": "Generate Unsubscribe",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 1,
+      "position": [1450, 400]
+    },
+    {
+      "parameters": {
+        "assignments": [
+          {
+            "name": "body_with_footer",
+            "type": "string",
+            "value": "={{ $json.body + '<hr style=\"margin-top: 2em; border: none; border-top: 1px solid #e5e7eb;\"><p style=\"font-size: 0.875em; color: #6b7280; margin-top: 1em;\">Sent by <a href=\"' + $env.NEXT_PUBLIC_APP_URL + '\">Chatty AI</a> | <a href=\"' + $json.unsubscribe_url + '\">Unsubscribe</a><br>' + ($env.COMPANY_ADDRESS || '1234 Main St, City, ST 12345') + '</p>' }}"
+          }
+        ]
+      },
+      "id": "append_footer",
+      "name": "Append CAN-SPAM Footer",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 1,
+      "position": [1650, 400]
+    },
+    {
+      "parameters": {
+        "url": "https://api.resend.com/emails",
+        "method": "POST",
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "Bearer {{ $env.RESEND_API_KEY }}"
+            }
+          ]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\"from\": \"{{ $json.queryResult?.[0]?.default_from_name || $env.RESEND_DEFAULT_FROM_NAME }} <{{ $json.queryResult?.[0]?.default_from_email || $env.RESEND_DEFAULT_FROM_EMAIL }}>\", \"to\": [\"{{ $json.contact_email }}\"], \"subject\": \"{{ $json.subject }}\", \"html\": \"{{ $json.body_with_footer }}\", \"text\": \"{{ $json.subject }}\", \"tags\": [{\"name\": \"touch_id\", \"value\": \"{{ $json.id }}\"}, {\"name\": \"org_id\", \"value\": \"{{ $json.org_id }}\"}]}"
+        }
+      },
+      "id": "send_email_resend",
+      "name": "HTTP POST to Resend",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1850, 400]
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "UPDATE marketing_touches SET status = 'sent', sent_at = NOW(), resend_message_id = $1 WHERE id = $2",
+        "queryParams": [
+          "{{ $json.response.id }}",
+          "{{ $json.id }}"
+        ]
+      },
+      "id": "mark_sent",
+      "name": "Mark Sent",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 1,
+      "position": [2050, 400],
+      "credentials": {
+        "postgres": "Chatty Postgres"
+      }
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "INSERT INTO signal_events (org_id, source_type, event_type, entity_type, entity_id, data, created_at, received_at) VALUES ($1, 'marketing_email', 'outbound_email_sent', 'contact', $2, $3, NOW(), NOW())",
+        "queryParams": [
+          "{{ $json.org_id }}",
+          "{{ $json.contact_email }}",
+          "{{ JSON.stringify({subject: $json.subject, messageId: $json.response.id}) }}"
+        ]
+      },
+      "id": "insert_signal_event",
+      "name": "Insert Signal Event",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 1,
+      "position": [2250, 400],
+      "credentials": {
+        "postgres": "Chatty Postgres"
+      }
+    },
+    {
+      "parameters": {
+        "respondWithOptions": "200"
+      },
+      "id": "respond_200",
+      "name": "Respond 200",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [2450, 400]
+    }
+  ],
+  "connections": {
+    "webhook": [
+      {
+        "node": "postgres_fetch",
+        "type": "main",
+        "index": [0, 0]
+      }
+    ],
+    "postgres_fetch": [
+      {
+        "node": "batch_loop",
+        "type": "main",
+        "index": [0, 0]
+      }
+    ],
+    "batch_loop": [
+      {
+        "node": "consent_recheck",
+        "type": "main",
+        "index": [0, 0]
+      }
+    ],
+    "consent_recheck": [
+      {
+        "node": "if_consent_valid",
+        "type": "main",
+        "index": [0, 0]
+      }
+    ],
+    "if_consent_valid": [
+      {
+        "node": "mark_opted_out",
+        "type": "main",
+        "index": [0, 0]
+      },
+      {
+        "node": "resolve_from_address",
+        "type": "main",
+        "index": [0, 1]
+      }
+    ],
+    "resolve_from_address": [
+      {
+        "node": "generate_unsubscribe",
+        "type": "main",
+        "index": [0, 0]
+      }
+    ],
+    "generate_unsubscribe": [
+      {
+        "node": "append_footer",
+        "type": "main",
+        "index": [0, 0]
+      }
+    ],
+    "append_footer": [
+      {
+        "node": "send_email_resend",
+        "type": "main",
+        "index": [0, 0]
+      }
+    ],
+    "send_email_resend": [
+      {
+        "node": "mark_sent",
+        "type": "main",
+        "index": [0, 0]
+      }
+    ],
+    "mark_sent": [
+      {
+        "node": "insert_signal_event",
+        "type": "main",
+        "index": [0, 0]
+      }
+    ],
+    "insert_signal_event": [
+      {
+        "node": "respond_200",
+        "type": "main",
+        "index": [0, 0]
+      }
+    ]
+  }
+}

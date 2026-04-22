@@ -1,0 +1,161 @@
+{
+  "name": "Chatty — Inbound Lead Qualifier",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "chatty-lead-inbound",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "n1-webhook-trigger",
+      "name": "Webhook — Inbound Lead",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [200, 300],
+      "webhookId": "chatty-lead-inbound"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Normalize payload from any capture source (form, missed call, DM).\nconst raw = items[0].json.body || items[0].json;\nconst payload = {\n  org_id: raw.org_id || raw.orgId || null,\n  source: raw.source || 'web_form',\n  name: (raw.name || raw.full_name || '').trim(),\n  phone: (raw.phone || raw.phone_number || '').replace(/[^+0-9]/g, ''),\n  email: (raw.email || '').toLowerCase(),\n  message: raw.message || raw.notes || raw.body || '',\n  vertical_hint: raw.vertical || raw.service_type || null,\n  received_at: new Date().toISOString()\n};\nif (!payload.org_id) {\n  throw new Error('org_id is required on every inbound lead payload');\n}\nreturn [{ json: payload }];"
+      },
+      "id": "n2-normalize",
+      "name": "Normalize Payload",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [420, 300]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.anthropic.com/v1/messages",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "anthropic-version", "value": "2023-06-01" },
+            { "name": "content-type", "value": "application/json" }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"model\": \"claude-sonnet-4-6\",\n  \"max_tokens\": 700,\n  \"system\": \"You qualify inbound leads for home-service contractors (roofing, HVAC, solar, exteriors, remodeling). Output strict JSON only. Never prose.\",\n  \"messages\": [\n    {\n      \"role\": \"user\",\n      \"content\": \"Classify this inbound lead and return JSON with keys: vertical (roofing|hvac|solar|exteriors|remodeling|other), intent_score (1-10 integer), urgency (emergency|this_week|this_month|exploring), budget_signal (high|medium|low|unknown), quality_reason (one sentence), recommended_response (one sentence suggesting how the operator should reply). Lead payload: {{ JSON.stringify($json) }}\"\n    }\n  ]\n}",
+        "options": {}
+      },
+      "id": "n3-classify",
+      "name": "Claude — Classify Lead",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [640, 300],
+      "credentials": {
+        "httpHeaderAuth": { "id": "__REPLACE_ON_IMPORT__", "name": "Chatty Anthropic" }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Parse Claude's JSON response and merge with the original lead payload.\nconst resp = items[0].json;\nconst text = (resp.content && resp.content[0] && resp.content[0].text) || '{}';\nlet classification;\ntry {\n  const start = text.indexOf('{');\n  const end = text.lastIndexOf('}');\n  classification = JSON.parse(text.slice(start, end + 1));\n} catch (e) {\n  classification = { vertical: 'other', intent_score: 0, urgency: 'unknown', budget_signal: 'unknown', quality_reason: 'parse_failed', recommended_response: 'Operator review needed.' };\n}\nconst lead = $('Normalize Payload').first().json;\nreturn [{ json: { ...lead, ...classification, classified_at: new Date().toISOString() } }];"
+      },
+      "id": "n4-parse",
+      "name": "Parse Classification",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [860, 300]
+    },
+    {
+      "parameters": {
+        "operation": "insert",
+        "schema": { "__rl": true, "mode": "list", "value": "public" },
+        "table": { "__rl": true, "mode": "list", "value": "signal_events" },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "org_id": "={{ $json.org_id }}",
+            "source_type": "={{ $json.source }}",
+            "source_id": "={{ $json.phone || $json.email }}",
+            "event_type": "lead_received",
+            "entity_type": "lead",
+            "entity_id": "={{ $json.phone || $json.email }}",
+            "data": "={{ JSON.stringify($json) }}"
+          }
+        },
+        "options": {}
+      },
+      "id": "n5-persist",
+      "name": "Postgres — Insert signal_event",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.5,
+      "position": [1080, 300],
+      "credentials": {
+        "postgres": { "id": "__REPLACE_ON_IMPORT__", "name": "Chatty Postgres" }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "conditions": [
+            {
+              "leftValue": "={{ $('Parse Classification').first().json.intent_score }}",
+              "rightValue": 7,
+              "operator": { "type": "number", "operation": "gte" }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "n6-route",
+      "name": "Route — Hot Lead?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [1300, 300]
+    },
+    {
+      "parameters": {
+        "resource": "sms",
+        "operation": "send",
+        "from": "={{ $env.TWILIO_PHONE_NUMBER }}",
+        "to": "={{ $env.OPERATOR_PHONE_NUMBER }}",
+        "toWhatsapp": false,
+        "message": "=🔥 Hot lead ({{ $('Parse Classification').first().json.intent_score }}/10 · {{ $('Parse Classification').first().json.urgency }})\\n\\n{{ $('Parse Classification').first().json.name || 'Unknown' }} · {{ $('Parse Classification').first().json.phone }}\\nVertical: {{ $('Parse Classification').first().json.vertical }}\\n\\n{{ $('Parse Classification').first().json.quality_reason }}\\n\\nSuggested: {{ $('Parse Classification').first().json.recommended_response }}",
+        "options": {}
+      },
+      "id": "n7-notify",
+      "name": "Twilio — Notify Operator",
+      "type": "n8n-nodes-base.twilio",
+      "typeVersion": 1,
+      "position": [1520, 220],
+      "credentials": {
+        "twilioApi": { "id": "__REPLACE_ON_IMPORT__", "name": "Chatty Twilio" }
+      }
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ JSON.stringify({ ok: true, event_id: $('Postgres — Insert signal_event').first().json.id, intent_score: $('Parse Classification').first().json.intent_score }) }}",
+        "options": {}
+      },
+      "id": "n8-respond",
+      "name": "Respond",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [1740, 380]
+    }
+  ],
+  "connections": {
+    "Webhook — Inbound Lead": { "main": [[{ "node": "Normalize Payload", "type": "main", "index": 0 }]] },
+    "Normalize Payload": { "main": [[{ "node": "Claude — Classify Lead", "type": "main", "index": 0 }]] },
+    "Claude — Classify Lead": { "main": [[{ "node": "Parse Classification", "type": "main", "index": 0 }]] },
+    "Parse Classification": { "main": [[{ "node": "Postgres — Insert signal_event", "type": "main", "index": 0 }]] },
+    "Postgres — Insert signal_event": { "main": [[{ "node": "Route — Hot Lead?", "type": "main", "index": 0 }]] },
+    "Route — Hot Lead?": {
+      "main": [
+        [{ "node": "Twilio — Notify Operator", "type": "main", "index": 0 }],
+        [{ "node": "Respond", "type": "main", "index": 0 }]
+      ]
+    },
+    "Twilio — Notify Operator": { "main": [[{ "node": "Respond", "type": "main", "index": 0 }]] }
+  },
+  "settings": { "executionOrder": "v1", "saveExecutionProgress": true, "saveManualExecutions": true },
+  "tags": [{ "name": "chatty-ai" }, { "name": "inbound" }]
+}
