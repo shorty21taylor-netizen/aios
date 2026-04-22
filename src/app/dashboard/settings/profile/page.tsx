@@ -156,4 +156,13 @@ export default function ProfileSettingsPage() {
                   onClick={() => handleSave(idx)}
                   disabled={saving}
                 >
-                  {saving ? 'Saving...' : 'S
+                  {saving ? 'Saving...' : 'Save'}
+              </Button>
+            </div>
+          </CardContent>
+        )}
+      </Card>
+    ))}
+  </div>
+  );
+}
