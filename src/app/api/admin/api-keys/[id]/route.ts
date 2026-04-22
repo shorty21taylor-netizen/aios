@@ -7,7 +7,7 @@ import { eq, and } from "drizzle-orm";
 
 export async function DELETE(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const { orgId } = await auth();
@@ -19,7 +19,7 @@ export async function DELETE(
     }
 
     const workspace = await requireWorkspace();
-    const keyId = params.id;
+    const { id: keyId } = await params;
 
     const key = await db
       .select()
