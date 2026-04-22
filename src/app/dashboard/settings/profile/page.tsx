@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardTitle } from '@/components/ui/card';
+import { PromptPreview } from './prompt-preview';
 
 export default function ProfileSettingsPage() {
   const [profile, setProfile] = useState<any>(null);
@@ -104,6 +105,10 @@ export default function ProfileSettingsPage() {
     <div className="p-8 max-w-4xl">
       <h1 className="text-3xl font-bold text-white mb-6">Business Profile Settings</h1>
 
+      <div className="mb-8">
+        <PromptPreview profile={profile} />
+      </div>
+
       {sections.map((section, idx) => (
         <Card key={idx} className="mb-6">
           <div className="flex items-center justify-between">
@@ -151,13 +156,4 @@ export default function ProfileSettingsPage() {
                   onClick={() => handleSave(idx)}
                   disabled={saving}
                 >
-                  {saving ? 'Saving...' : 'Save'}
-                </Button>
-              </div>
-            </CardContent>
-          )}
-        </Card>
-      ))}
-    </div>
-  );
-}
+                  {saving ? 'Saving...' : 'S

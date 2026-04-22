@@ -146,3 +146,25 @@ export const workspaceProfiles = pgTable(
     updatedAtIdx: index("idx_workspace_profiles_updated").on(table.updatedAt),
   })
 );
+
+export const workspaceAgentSettings = pgTable(
+  "workspace_agent_settings",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    workspaceId: uuid("workspace_id")
+      .notNull()
+      .references(() => workspaces.id, { onDelete: "cascade" }),
+    agentSlug: text("agent_slug").notNull(),
+    isEnabled: boolean("is_enabled").notNull().default(true),
+    lastToggledAt: timestamp("last_toggled_at").defaultNow().notNull(),
+    config: jsonb("config").notNull().default(sql`'{}'::jsonb`),
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+    updatedAt: timestamp("updated_at").defaultNow().notNull(),
+  },
+  (table) => ({
+    workspaceSlugIdx: uniqueIndex("idx_agent_settings_workspace_slug").on(
+      table.workspaceId,
+      table.agentSlug
+    ),
+  })
+);

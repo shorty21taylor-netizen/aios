@@ -1,8 +1,15 @@
 import { redirect } from "next/navigation";
+import Link from "next/link";
 import { auth } from "@clerk/nextjs/server";
 import { getWorkspaceForAuth } from "@/lib/auth/workspace";
 import { UserButton, OrganizationSwitcher } from "@clerk/nextjs";
 import { getProfileByWorkspaceId } from "@/lib/profile/queries";
+
+const NAV_LINKS: Array<{ href: string; label: string }> = [
+  { href: "/dashboard", label: "Overview" },
+  { href: "/dashboard/agents", label: "Agents" },
+  { href: "/dashboard/settings/profile", label: "Profile" },
+];
 
 export default async function DashboardLayout({
   children,
@@ -30,14 +37,5 @@ export default async function DashboardLayout({
     <div className="min-h-screen bg-slate-950">
       <header className="border-b border-slate-700 bg-slate-900">
         <div className="max-w-7xl mx-auto px-4 py-4 flex items-center justify-between">
-          <div className="flex items-center gap-4">
-            <h1 className="text-2xl font-bold text-white">AIOS</h1>
-            <OrganizationSwitcher />
-          </div>
-          <UserButton />
-        </div>
-      </header>
-      <main className="max-w-7xl mx-auto px-4 py-8">{children}</main>
-    </div>
-  );
-}
+          <div className="flex items-center gap-6">
+            <h1 
