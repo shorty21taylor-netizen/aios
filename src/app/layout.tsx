@@ -3,8 +3,8 @@ import { ClerkProvider } from "@clerk/nextjs";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "AIOS - AI Operating System",
-  description: "Dashboard for n8n workflow events and KPIs",
+  title: "salesyAI — AI Operating Sales Enablement",
+  description: "The AI Operating Sales Enablement system for local home service based companies",
 };
 
 export default function RootLayout({
