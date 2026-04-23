@@ -111,5 +111,5 @@ export async function mergeProfileDetails(
     ...details,
   };
 
-  return updateProfile(workspaceId, { details: merged });
+  return updateProfile(workspaceId, { details: merged as Profile['details'] });
 }
