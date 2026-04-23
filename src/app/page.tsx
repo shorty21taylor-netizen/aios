@@ -7,11 +7,27 @@ import {
   MessageSquare,
   Workflow,
   CheckCircle2,
+  ChevronDown,
 } from "lucide-react";
+
+const GRID_BACKDROP_STYLE = {
+  backgroundImage:
+    "radial-gradient(circle at 1px 1px, rgba(195, 202, 224, 0.22) 1px, transparent 0)",
+  backgroundSize: "56px 56px",
+  WebkitMaskImage:
+    "radial-gradient(ellipse at 50% 0%, black 40%, transparent 80%)",
+  maskImage:
+    "radial-gradient(ellipse at 50% 0%, black 40%, transparent 80%)",
+} as const;
 
 export default function LandingPage() {
   return (
-    <div className="min-h-screen bg-ink-950 text-ink-50 font-sans">
+    <main className="relative min-h-screen overflow-hidden bg-ink-975 text-ink-50 font-sans">
+      <div
+        aria-hidden
+        className="pointer-events-none fixed inset-0 -z-10 opacity-[0.35]"
+        style={GRID_BACKDROP_STYLE}
+      />
       <SiteNav />
       <Hero />
       <StatStrip />
@@ -21,34 +37,36 @@ export default function LandingPage() {
       <TrustStrip />
       <FAQ />
       <SiteFooter />
-    </div>
+    </main>
   );
 }
 
 function SiteNav() {
   return (
-    <header className="sticky top-0 z-40 border-b border-ink-800 bg-ink-950/80 backdrop-blur">
+    <header className="sticky top-0 z-40 border-b border-white/[0.06] bg-ink-975/70 backdrop-blur-xl">
       <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-4">
-        <Link href="/" className="font-display text-2xl font-bold tracking-tight">
+        <Link href="/" className="font-display text-xl font-semibold tracking-tight">
           <span className="text-ink-50">salesy</span>
-          <span className="text-brand-500">AI</span>
+          <span className="bg-gradient-to-r from-brand-400 to-cyan-500 bg-clip-text text-transparent">
+            AI
+          </span>
         </Link>
         <nav className="flex items-center gap-3 sm:gap-4">
           <Link
             href="/sign-in"
-            className="text-sm text-ink-200 transition-colors hover:text-ink-50"
+            className="text-sm text-ink-300 transition-colors hover:text-ink-50"
           >
             Sign In
           </Link>
           <Link
             href="/sign-up"
-            className="rounded-md bg-brand-500 px-4 py-2 text-sm font-semibold text-ink-950 transition-colors hover:bg-brand-400"
+            className="rounded-xl bg-brand-500 px-4 py-2 text-sm font-medium text-white shadow-[0_0_0_1px_rgba(124,92,255,0.6),0_8px_28px_-10px_rgba(124,92,255,0.7)] transition-colors hover:bg-brand-400"
           >
             Sign Up
           </Link>
           <Link
             href="#demo"
-            className="hidden rounded-md border border-ink-50/80 px-4 py-2 text-sm font-semibold text-ink-50 transition-colors hover:border-ink-50 hover:bg-ink-50 hover:text-ink-950 sm:inline-block"
+            className="hidden rounded-xl border border-white/10 bg-white/[0.02] px-4 py-2 text-sm font-medium text-ink-50 backdrop-blur-xl transition-colors hover:border-white/20 sm:inline-block"
           >
             Book Demo
           </Link>
@@ -60,27 +78,38 @@ function SiteNav() {
 
 function Hero() {
   return (
-    <section className="bg-ink-950">
-      <div className="mx-auto max-w-6xl px-6 pb-20 pt-20 sm:pt-28">
-        <h1 className="font-display text-4xl font-bold leading-[1.05] tracking-tight text-ink-50 sm:text-6xl md:text-7xl">
+    <section className="relative overflow-hidden">
+      <div
+        aria-hidden
+        className="pointer-events-none absolute left-1/2 top-0 h-[520px] w-[520px] -translate-x-1/2 rounded-full bg-brand-500/30 blur-[120px]"
+      />
+      <div
+        aria-hidden
+        className="pointer-events-none absolute right-0 top-0 h-[360px] w-[360px] translate-x-1/3 rounded-full bg-cyan-500/20 blur-[100px]"
+      />
+      <div className="relative mx-auto max-w-6xl px-6 pb-20 pt-20 sm:pt-28">
+        <div className="font-mono text-xs uppercase tracking-[0.2em] text-brand-400">
+          salesyAI · Residential Services
+        </div>
+        <h1 className="mt-6 bg-gradient-to-br from-ink-50 via-ink-50 to-brand-300 bg-clip-text font-display text-5xl font-medium leading-[1.05] tracking-tight text-transparent md:text-7xl">
           Recover the missed calls and dead estimates already in your business.
         </h1>
-        <p className="mt-6 max-w-3xl text-lg text-ink-200 sm:text-xl">
+        <p className="mt-6 max-w-3xl text-lg text-ink-300 sm:text-xl">
           salesyAI plugs into your existing software, answers every call,
           follows up on every quote, and only charges{" "}
-          <span className="text-brand-400">$200</span> when we close a
+          <span className="text-cyan-400">$200</span> when we close a
           reactivated deal.
         </p>
         <div className="mt-10 flex flex-col gap-3 sm:flex-row">
           <Link
             href="#demo"
-            className="inline-flex items-center justify-center rounded-md bg-brand-500 px-6 py-3 text-base font-semibold text-ink-950 transition-colors hover:bg-brand-400"
+            className="inline-flex items-center justify-center rounded-xl bg-brand-500 px-6 py-3 text-sm font-medium text-white shadow-[0_0_0_1px_rgba(124,92,255,0.6),0_12px_40px_-12px_rgba(124,92,255,0.7)] transition-colors hover:bg-brand-400"
           >
             Book a 15-min demo
           </Link>
           <Link
             href="#how"
-            className="inline-flex items-center justify-center rounded-md border border-ink-50/80 px-6 py-3 text-base font-semibold text-ink-50 transition-colors hover:border-ink-50 hover:bg-ink-50 hover:text-ink-950"
+            className="inline-flex items-center justify-center rounded-xl border border-white/10 bg-white/[0.02] px-6 py-3 text-sm font-medium text-ink-50 backdrop-blur-xl transition-colors hover:border-white/20"
           >
             See how it works
           </Link>
@@ -110,18 +139,20 @@ function StatStrip() {
     },
   ];
   return (
-    <section className="border-y border-ink-800 bg-ink-900">
-      <div className="mx-auto grid max-w-6xl grid-cols-1 divide-y divide-ink-800 md:grid-cols-3 md:divide-x md:divide-y-0">
-        {stats.map((s) => (
-          <div key={s.big} className="px-6 py-8 md:px-10 md:py-10">
-            <div className="font-display text-3xl font-bold text-brand-400 sm:text-4xl">
-              {s.big}
+    <section className="relative">
+      <div className="mx-auto max-w-6xl px-6 py-16">
+        <div className="grid grid-cols-1 divide-y divide-white/[0.06] overflow-hidden rounded-2xl border border-white/[0.06] bg-white/[0.02] backdrop-blur-xl md:grid-cols-3 md:divide-x md:divide-y-0">
+          {stats.map((s) => (
+            <div key={s.big} className="px-8 py-10">
+              <div className="bg-gradient-to-br from-ink-50 to-brand-300 bg-clip-text font-display text-5xl font-medium text-transparent">
+                {s.big}
+              </div>
+              <div className="mt-3 font-mono text-xs uppercase tracking-[0.2em] text-ink-400">
+                {s.label}
+              </div>
             </div>
-            <div className="mt-2 text-sm text-ink-300 sm:text-base">
-              {s.label}
-            </div>
-          </div>
-        ))}
+          ))}
+        </div>
       </div>
     </section>
   );
@@ -149,19 +180,21 @@ function Pain() {
     },
   ];
   return (
-    <section className="bg-ink-950 py-20 sm:py-28">
+    <section className="relative py-20 sm:py-28">
       <div className="mx-auto max-w-6xl px-6">
-        <h2 className="font-display text-3xl font-bold tracking-tight text-ink-50 sm:text-5xl">
+        <h2 className="font-display text-3xl font-medium tracking-tight text-ink-50 sm:text-5xl">
           If your phone misses it, it&apos;s gone.
         </h2>
         <div className="mt-12 grid grid-cols-1 gap-5 md:grid-cols-3">
           {cards.map(({ icon: Icon, title, body }) => (
             <div
               key={title}
-              className="rounded-xl border border-ink-800 bg-ink-900 p-6"
+              className="rounded-2xl border border-white/[0.06] bg-white/[0.02] p-6 ring-1 ring-inset ring-white/[0.03] backdrop-blur-xl transition-colors hover:border-brand-500/40"
             >
-              <Icon className="h-8 w-8 text-brand-500" />
-              <h3 className="mt-5 font-display text-xl font-semibold text-ink-50">
+              <div className="grid h-12 w-12 place-items-center rounded-xl border border-white/[0.08] bg-gradient-to-br from-brand-500/20 to-cyan-500/10">
+                <Icon className="h-5 w-5 text-brand-400" />
+              </div>
+              <h3 className="mt-6 font-display text-xl font-medium text-ink-50">
                 {title}
               </h3>
               <p className="mt-3 text-sm leading-relaxed text-ink-300">
@@ -180,8 +213,7 @@ function HowItWorks() {
     {
       num: "01",
       title: "Capture",
-      body:
-        "n8n watches every call, SMS, form, and missed touch.",
+      body: "n8n watches every call, SMS, form, and missed touch.",
       icon: PhoneCall,
     },
     {
@@ -200,24 +232,26 @@ function HowItWorks() {
     },
   ];
   return (
-    <section id="how" className="border-y border-ink-800 bg-ink-900 py-20 sm:py-28">
+    <section id="how" className="relative py-20 sm:py-28">
       <div className="mx-auto max-w-6xl px-6">
-        <h2 className="font-display text-3xl font-bold tracking-tight text-ink-50 sm:text-5xl">
+        <h2 className="font-display text-3xl font-medium tracking-tight text-ink-50 sm:text-5xl">
           How it works.
         </h2>
-        <div className="mt-12 grid grid-cols-1 gap-6 md:grid-cols-3">
+        <div className="mt-12 grid grid-cols-1 gap-5 md:grid-cols-3">
           {steps.map(({ num, title, body, icon: Icon }) => (
             <div
               key={num}
-              className="rounded-xl border border-ink-800 bg-ink-950 p-7"
+              className="rounded-2xl border border-white/[0.06] bg-white/[0.02] p-6 ring-1 ring-inset ring-white/[0.03] backdrop-blur-xl transition-colors hover:border-brand-500/40"
             >
-              <div className="flex items-center justify-between">
-                <span className="font-display text-4xl font-bold text-brand-500">
+              <div className="flex items-start justify-between">
+                <span className="font-mono text-sm uppercase tracking-[0.2em] text-brand-400">
                   {num}
                 </span>
-                <Icon className="h-6 w-6 text-ink-400" />
+                <div className="grid h-10 w-10 place-items-center rounded-xl border border-white/[0.08] bg-gradient-to-br from-brand-500/20 to-cyan-500/10">
+                  <Icon className="h-4 w-4 text-brand-400" />
+                </div>
               </div>
-              <h3 className="mt-5 font-display text-xl font-semibold text-ink-50">
+              <h3 className="mt-6 font-display text-xl font-medium text-ink-50">
                 {title}
               </h3>
               <p className="mt-3 text-sm leading-relaxed text-ink-300">
@@ -239,25 +273,34 @@ function Pricing() {
     "Live dashboard for every recovered call, booked job, and closed reactivation",
   ];
   return (
-    <section id="demo" className="bg-ink-950 py-20 sm:py-28">
-      <div className="mx-auto max-w-3xl px-6">
-        <div className="rounded-2xl border border-ink-800 bg-ink-900 p-8 sm:p-12">
+    <section id="demo" className="relative py-20 sm:py-28">
+      <div className="mx-auto max-w-2xl px-6">
+        <div className="rounded-3xl border-2 border-brand-500/40 bg-gradient-to-br from-brand-500/[0.08] via-white/[0.02] to-cyan-500/[0.06] p-10 shadow-[0_0_80px_-20px_rgba(124,92,255,0.35)] backdrop-blur-xl">
           <div className="text-center">
-            <div className="inline-flex items-center rounded-full border border-brand-500/30 bg-brand-500/10 px-3 py-1 text-xs font-semibold uppercase tracking-wider text-brand-400">
+            <span className="inline-flex items-center rounded-full border border-brand-500/30 bg-brand-500/10 px-3 py-1 font-mono text-xs uppercase tracking-[0.2em] text-brand-400">
               Pricing
-            </div>
-            <h2 className="mt-5 font-display text-3xl font-bold tracking-tight text-ink-50 sm:text-4xl">
-              <span className="text-brand-400">$2,500</span> setup
-              <span className="text-ink-500"> • </span>
-              <span className="text-brand-400">$897</span>/month
-              <span className="text-ink-500"> • </span>
-              <span className="text-brand-400">$200</span> per closed reactivated deal
+            </span>
+            <h2 className="mt-6 font-display text-3xl font-medium tracking-tight text-ink-50 sm:text-4xl">
+              <span className="bg-gradient-to-br from-ink-50 to-brand-300 bg-clip-text text-transparent">
+                $2,500
+              </span>{" "}
+              setup
+              <span className="text-ink-600"> • </span>
+              <span className="bg-gradient-to-br from-ink-50 to-brand-300 bg-clip-text text-transparent">
+                $897
+              </span>
+              /month
+              <span className="text-ink-600"> • </span>
+              <span className="bg-gradient-to-br from-ink-50 to-cyan-500 bg-clip-text text-transparent">
+                $200
+              </span>{" "}
+              per closed reactivated deal
             </h2>
           </div>
           <ul className="mt-10 space-y-4">
             {bullets.map((b) => (
               <li key={b} className="flex items-start gap-3">
-                <CheckCircle2 className="mt-0.5 h-5 w-5 flex-none text-brand-500" />
+                <CheckCircle2 className="mt-0.5 h-5 w-5 flex-none text-mint-500" />
                 <span className="text-ink-200">{b}</span>
               </li>
             ))}
@@ -265,7 +308,7 @@ function Pricing() {
           <div className="mt-10 flex justify-center">
             <Link
               href="https://cal.com/"
-              className="inline-flex items-center justify-center rounded-md bg-brand-500 px-8 py-3 text-base font-semibold text-ink-950 transition-colors hover:bg-brand-400"
+              className="inline-flex items-center justify-center rounded-xl bg-brand-500 px-8 py-3 text-sm font-medium text-white shadow-[0_0_0_1px_rgba(124,92,255,0.6),0_12px_40px_-12px_rgba(124,92,255,0.7)] transition-colors hover:bg-brand-400"
             >
               Book a 15-min demo
             </Link>
@@ -285,15 +328,15 @@ function TrustStrip() {
     "ElevenLabs",
   ];
   return (
-    <section className="border-y border-ink-800 bg-ink-900 py-12">
+    <section className="relative border-y border-white/[0.04] py-8">
       <div className="mx-auto max-w-6xl px-6 text-center">
-        <p className="text-sm text-ink-400">
+        <p className="font-mono text-xs uppercase tracking-[0.2em] text-ink-500">
           Plugs into the software you already use.
         </p>
-        <div className="mt-6 flex flex-wrap items-center justify-center gap-x-10 gap-y-3 text-ink-400">
+        <div className="mt-5 flex flex-wrap items-center justify-center gap-x-8 gap-y-3">
           {names.map((n, i) => (
-            <span key={n} className="flex items-center gap-10">
-              <span className="font-display text-base font-medium sm:text-lg">
+            <div key={n} className="flex items-center gap-8">
+              <span className="font-mono text-sm uppercase tracking-[0.2em] text-ink-500">
                 {n}
               </span>
               {i < names.length - 1 && (
@@ -301,7 +344,7 @@ function TrustStrip() {
                   •
                 </span>
               )}
-            </span>
+            </div>
           ))}
         </div>
       </div>
@@ -333,21 +376,24 @@ function FAQ() {
     },
   ];
   return (
-    <section className="bg-ink-950 py-20 sm:py-28">
+    <section className="relative py-20 sm:py-28">
       <div className="mx-auto max-w-3xl px-6">
-        <h2 className="font-display text-3xl font-bold tracking-tight text-ink-50 sm:text-5xl">
+        <h2 className="font-display text-3xl font-medium tracking-tight text-ink-50 sm:text-5xl">
           Questions.
         </h2>
-        <div className="mt-10 divide-y divide-ink-800 border-y border-ink-800">
+        <div className="mt-10 space-y-3">
           {faqs.map((f) => (
-            <details key={f.q} className="group px-1 py-5">
-              <summary className="flex cursor-pointer items-center justify-between text-left text-lg font-medium text-ink-50 marker:hidden [&::-webkit-details-marker]:hidden">
-                <span className="font-display">{f.q}</span>
-                <span className="ml-4 text-brand-500 transition-transform group-open:rotate-45">
-                  +
+            <details
+              key={f.q}
+              className="group rounded-2xl border border-white/[0.06] bg-white/[0.02] backdrop-blur-xl transition-colors hover:border-brand-500/30"
+            >
+              <summary className="flex cursor-pointer items-center justify-between gap-4 p-6 text-left [&::-webkit-details-marker]:hidden">
+                <span className="font-display text-lg font-medium text-ink-50">
+                  {f.q}
                 </span>
+                <ChevronDown className="h-5 w-5 flex-none text-brand-400 transition-transform group-open:rotate-180" />
               </summary>
-              <p className="mt-4 text-base leading-relaxed text-ink-300">
+              <p className="px-6 pb-6 text-base leading-relaxed text-ink-300">
                 {f.a}
               </p>
             </details>
@@ -360,13 +406,15 @@ function FAQ() {
 
 function SiteFooter() {
   return (
-    <footer className="border-t border-ink-800 bg-ink-950">
+    <footer className="relative border-t border-white/[0.06] bg-ink-950">
       <div className="mx-auto max-w-6xl px-6 py-12">
         <div className="flex flex-col gap-6 md:flex-row md:items-start md:justify-between">
           <div className="max-w-md">
-            <div className="font-display text-xl font-bold">
+            <div className="font-display text-xl font-semibold">
               <span className="text-ink-50">salesy</span>
-              <span className="text-brand-500">AI</span>
+              <span className="bg-gradient-to-r from-brand-400 to-cyan-500 bg-clip-text text-transparent">
+                AI
+              </span>
             </div>
             <p className="mt-3 text-sm text-ink-400">
               salesyAI — The AI Operating Sales Enablement system for local home
@@ -388,7 +436,7 @@ function SiteFooter() {
             </Link>
           </nav>
         </div>
-        <div className="mt-10 border-t border-ink-800 pt-6 text-xs text-ink-500">
+        <div className="mt-10 border-t border-white/[0.06] pt-6 font-mono text-xs uppercase tracking-[0.2em] text-ink-500">
           © 2026 salesyAI
         </div>
       </div>

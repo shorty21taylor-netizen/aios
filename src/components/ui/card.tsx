@@ -8,7 +8,7 @@ export const Card = React.forwardRef<HTMLDivElement, CardProps>(
   ({ className, children, ...props }, ref) => (
     <div
       ref={ref}
-      className={`bg-slate-800 rounded-lg border border-slate-700 p-6 ${
+      className={`rounded-2xl border border-white/[0.06] bg-white/[0.02] p-6 ring-1 ring-inset ring-white/[0.03] backdrop-blur-xl ${
         className || ""
       }`}
       {...props}
@@ -26,7 +26,7 @@ export const CardTitle = React.forwardRef<
 >(({ className, ...props }, ref) => (
   <h2
     ref={ref}
-    className={`text-lg font-semibold text-white ${className || ""}`}
+    className={`font-display text-lg font-medium text-ink-50 ${className || ""}`}
     {...props}
   />
 ));
