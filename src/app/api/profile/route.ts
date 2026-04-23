@@ -16,7 +16,7 @@ async function getWorkspaceId(clerkOrgId: string): Promise<string | null> {
   return workspace[0]?.id || null;
 }
 
-export async function GET(req: NextRequest) {
+export async function GET(_req: NextRequest) {
   try {
     const { orgId } = await auth();
     if (!orgId) {
