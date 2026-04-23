@@ -58,7 +58,7 @@ export default function OnboardingWizard() {
     handleSubmit,
     watch,
     formState: { errors },
-    reset,
+
   } = useForm({
     resolver: zodResolver(schemas[currentStep - 1]),
     defaultValues: profileData,
