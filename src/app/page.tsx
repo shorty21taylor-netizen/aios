@@ -10,24 +10,9 @@ import {
   ChevronDown,
 } from "lucide-react";
 
-const GRID_BACKDROP_STYLE = {
-  backgroundImage:
-    "radial-gradient(circle at 1px 1px, rgba(195, 202, 224, 0.22) 1px, transparent 0)",
-  backgroundSize: "56px 56px",
-  WebkitMaskImage:
-    "radial-gradient(ellipse at 50% 0%, black 40%, transparent 80%)",
-  maskImage:
-    "radial-gradient(ellipse at 50% 0%, black 40%, transparent 80%)",
-} as const;
-
 export default function LandingPage() {
   return (
-    <main className="relative min-h-screen overflow-hidden bg-ink-975 text-ink-50 font-sans">
-      <div
-        aria-hidden
-        className="pointer-events-none fixed inset-0 -z-10 opacity-[0.35]"
-        style={GRID_BACKDROP_STYLE}
-      />
+    <main className="min-h-screen bg-white text-grey-900 font-sans">
       <SiteNav />
       <Hero />
       <StatStrip />
@@ -43,30 +28,31 @@ export default function LandingPage() {
 
 function SiteNav() {
   return (
-    <header className="sticky top-0 z-40 border-b border-white/[0.06] bg-ink-975/70 backdrop-blur-xl">
+    <header className="sticky top-0 z-40 border-b border-grey-200 bg-white/80 backdrop-blur-md">
       <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-4">
-        <Link href="/" className="font-display text-xl font-semibold tracking-tight">
-          <span className="text-ink-50">salesy</span>
-          <span className="bg-gradient-to-r from-brand-400 to-cyan-500 bg-clip-text text-transparent">
-            AI
-          </span>
+        <Link
+          href="/"
+          className="font-display text-xl font-semibold text-grey-950"
+        >
+          <span>salesy</span>
+          <span className="text-brand-500">AI</span>
         </Link>
-        <nav className="flex items-center gap-3 sm:gap-4">
+        <nav className="flex items-center gap-4 sm:gap-6">
           <Link
             href="/sign-in"
-            className="text-sm text-ink-300 transition-colors hover:text-ink-50"
+            className="text-sm font-medium text-grey-600 transition-colors hover:text-grey-950"
           >
             Sign In
           </Link>
           <Link
             href="/sign-up"
-            className="rounded-xl bg-brand-500 px-4 py-2 text-sm font-medium text-white shadow-[0_0_0_1px_rgba(124,92,255,0.6),0_8px_28px_-10px_rgba(124,92,255,0.7)] transition-colors hover:bg-brand-400"
+            className="rounded-lg bg-brand-500 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-brand-600"
           >
             Sign Up
           </Link>
           <Link
             href="#demo"
-            className="hidden rounded-xl border border-white/10 bg-white/[0.02] px-4 py-2 text-sm font-medium text-ink-50 backdrop-blur-xl transition-colors hover:border-white/20 sm:inline-block"
+            className="hidden rounded-lg border border-grey-200 bg-white px-4 py-2 text-sm font-medium text-grey-900 transition-colors hover:border-grey-300 hover:bg-grey-50 sm:inline-block"
           >
             Book Demo
           </Link>
@@ -78,43 +64,35 @@ function SiteNav() {
 
 function Hero() {
   return (
-    <section className="relative overflow-hidden">
-      <div
-        aria-hidden
-        className="pointer-events-none absolute left-1/2 top-0 h-[520px] w-[520px] -translate-x-1/2 rounded-full bg-brand-500/30 blur-[120px]"
-      />
-      <div
-        aria-hidden
-        className="pointer-events-none absolute right-0 top-0 h-[360px] w-[360px] translate-x-1/3 rounded-full bg-cyan-500/20 blur-[100px]"
-      />
-      <div className="relative mx-auto max-w-6xl px-6 pb-20 pt-20 sm:pt-28">
-        <div className="font-mono text-xs uppercase tracking-[0.2em] text-brand-400">
+    <section className="bg-white">
+      <div className="mx-auto max-w-6xl px-6 py-32">
+        <div className="text-xs font-medium uppercase tracking-[0.14em] text-brand-500">
           salesyAI · Residential Services
         </div>
-        <h1 className="mt-6 bg-gradient-to-br from-ink-50 via-ink-50 to-brand-300 bg-clip-text font-display text-5xl font-medium leading-[1.05] tracking-tight text-transparent md:text-7xl">
+        <h1 className="mt-6 font-display text-5xl font-medium leading-[1.05] tracking-[-0.02em] text-grey-950 md:text-7xl">
           Recover the missed calls and dead estimates already in your business.
         </h1>
-        <p className="mt-6 max-w-3xl text-lg text-ink-300 sm:text-xl">
+        <p className="mt-6 max-w-xl text-lg text-grey-600">
           salesyAI plugs into your existing software, answers every call,
           follows up on every quote, and only charges{" "}
-          <span className="text-cyan-400">$200</span> when we close a
+          <span className="text-grey-950">$200</span> when we close a
           reactivated deal.
         </p>
         <div className="mt-10 flex flex-col gap-3 sm:flex-row">
           <Link
             href="#demo"
-            className="inline-flex items-center justify-center rounded-xl bg-brand-500 px-6 py-3 text-sm font-medium text-white shadow-[0_0_0_1px_rgba(124,92,255,0.6),0_12px_40px_-12px_rgba(124,92,255,0.7)] transition-colors hover:bg-brand-400"
+            className="inline-flex items-center justify-center rounded-lg bg-brand-500 px-5 py-2.5 text-sm font-medium text-white transition-colors hover:bg-brand-600"
           >
             Book a 15-min demo
           </Link>
           <Link
             href="#how"
-            className="inline-flex items-center justify-center rounded-xl border border-white/10 bg-white/[0.02] px-6 py-3 text-sm font-medium text-ink-50 backdrop-blur-xl transition-colors hover:border-white/20"
+            className="inline-flex items-center justify-center rounded-lg border border-grey-200 bg-white px-5 py-2.5 text-sm font-medium text-grey-900 transition-colors hover:border-grey-300 hover:bg-grey-50"
           >
             See how it works
           </Link>
         </div>
-        <p className="mt-8 text-sm text-ink-400">
+        <p className="mt-10 text-sm text-grey-500">
           Built for HVAC, plumbing, electrical, roofing, and pest-control owners
           doing real call volume.
         </p>
@@ -139,15 +117,15 @@ function StatStrip() {
     },
   ];
   return (
-    <section className="relative">
-      <div className="mx-auto max-w-6xl px-6 py-16">
-        <div className="grid grid-cols-1 divide-y divide-white/[0.06] overflow-hidden rounded-2xl border border-white/[0.06] bg-white/[0.02] backdrop-blur-xl md:grid-cols-3 md:divide-x md:divide-y-0">
+    <section className="bg-white">
+      <div className="mx-auto max-w-6xl px-6 pb-20">
+        <div className="grid grid-cols-1 divide-y divide-grey-200 overflow-hidden rounded-2xl border border-grey-200 bg-grey-50 md:grid-cols-3 md:divide-x md:divide-y-0">
           {stats.map((s) => (
             <div key={s.big} className="px-8 py-10">
-              <div className="bg-gradient-to-br from-ink-50 to-brand-300 bg-clip-text font-display text-5xl font-medium text-transparent">
+              <div className="font-display text-5xl font-semibold text-grey-950">
                 {s.big}
               </div>
-              <div className="mt-3 font-mono text-xs uppercase tracking-[0.2em] text-ink-400">
+              <div className="mt-2 text-xs uppercase tracking-[0.14em] text-grey-500">
                 {s.label}
               </div>
             </div>
@@ -180,24 +158,24 @@ function Pain() {
     },
   ];
   return (
-    <section className="relative py-20 sm:py-28">
+    <section className="bg-white py-24 sm:py-32">
       <div className="mx-auto max-w-6xl px-6">
-        <h2 className="font-display text-3xl font-medium tracking-tight text-ink-50 sm:text-5xl">
+        <h2 className="font-display text-3xl font-medium tracking-[-0.02em] text-grey-950 sm:text-5xl">
           If your phone misses it, it&apos;s gone.
         </h2>
-        <div className="mt-12 grid grid-cols-1 gap-5 md:grid-cols-3">
+        <div className="mt-14 grid grid-cols-1 gap-5 md:grid-cols-3">
           {cards.map(({ icon: Icon, title, body }) => (
             <div
               key={title}
-              className="rounded-2xl border border-white/[0.06] bg-white/[0.02] p-6 ring-1 ring-inset ring-white/[0.03] backdrop-blur-xl transition-colors hover:border-brand-500/40"
+              className="rounded-2xl border border-grey-200 bg-white p-6 transition-colors hover:border-grey-300"
             >
-              <div className="grid h-12 w-12 place-items-center rounded-xl border border-white/[0.08] bg-gradient-to-br from-brand-500/20 to-cyan-500/10">
-                <Icon className="h-5 w-5 text-brand-400" />
+              <div className="grid h-10 w-10 place-items-center rounded-lg bg-brand-50">
+                <Icon className="h-5 w-5 text-brand-600" />
               </div>
-              <h3 className="mt-6 font-display text-xl font-medium text-ink-50">
+              <h3 className="mt-6 font-display text-lg font-medium text-grey-950">
                 {title}
               </h3>
-              <p className="mt-3 text-sm leading-relaxed text-ink-300">
+              <p className="mt-3 text-sm leading-relaxed text-grey-600">
                 {body}
               </p>
             </div>
@@ -232,29 +210,29 @@ function HowItWorks() {
     },
   ];
   return (
-    <section id="how" className="relative py-20 sm:py-28">
+    <section id="how" className="bg-grey-50 py-24 sm:py-32">
       <div className="mx-auto max-w-6xl px-6">
-        <h2 className="font-display text-3xl font-medium tracking-tight text-ink-50 sm:text-5xl">
+        <h2 className="font-display text-3xl font-medium tracking-[-0.02em] text-grey-950 sm:text-5xl">
           How it works.
         </h2>
-        <div className="mt-12 grid grid-cols-1 gap-5 md:grid-cols-3">
+        <div className="mt-14 grid grid-cols-1 gap-5 md:grid-cols-3">
           {steps.map(({ num, title, body, icon: Icon }) => (
             <div
               key={num}
-              className="rounded-2xl border border-white/[0.06] bg-white/[0.02] p-6 ring-1 ring-inset ring-white/[0.03] backdrop-blur-xl transition-colors hover:border-brand-500/40"
+              className="rounded-2xl border border-grey-200 bg-white p-6 transition-colors hover:border-grey-300"
             >
               <div className="flex items-start justify-between">
-                <span className="font-mono text-sm uppercase tracking-[0.2em] text-brand-400">
+                <span className="text-xs font-medium uppercase tracking-[0.14em] text-brand-500">
                   {num}
                 </span>
-                <div className="grid h-10 w-10 place-items-center rounded-xl border border-white/[0.08] bg-gradient-to-br from-brand-500/20 to-cyan-500/10">
-                  <Icon className="h-4 w-4 text-brand-400" />
+                <div className="grid h-10 w-10 place-items-center rounded-lg bg-brand-50">
+                  <Icon className="h-4 w-4 text-brand-600" />
                 </div>
               </div>
-              <h3 className="mt-6 font-display text-xl font-medium text-ink-50">
+              <h3 className="mt-6 font-display text-lg font-medium text-grey-950">
                 {title}
               </h3>
-              <p className="mt-3 text-sm leading-relaxed text-ink-300">
+              <p className="mt-3 text-sm leading-relaxed text-grey-600">
                 {body}
               </p>
             </div>
@@ -273,42 +251,33 @@ function Pricing() {
     "Live dashboard for every recovered call, booked job, and closed reactivation",
   ];
   return (
-    <section id="demo" className="relative py-20 sm:py-28">
+    <section id="demo" className="bg-white py-24 sm:py-32">
       <div className="mx-auto max-w-2xl px-6">
-        <div className="rounded-3xl border-2 border-brand-500/40 bg-gradient-to-br from-brand-500/[0.08] via-white/[0.02] to-cyan-500/[0.06] p-10 shadow-[0_0_80px_-20px_rgba(124,92,255,0.35)] backdrop-blur-xl">
+        <div className="rounded-3xl border border-grey-200 bg-white p-10 shadow-[0_1px_3px_rgba(0,0,0,0.04),0_8px_24px_rgba(0,0,0,0.04)]">
           <div className="text-center">
-            <span className="inline-flex items-center rounded-full border border-brand-500/30 bg-brand-500/10 px-3 py-1 font-mono text-xs uppercase tracking-[0.2em] text-brand-400">
+            <span className="inline-flex items-center rounded-full bg-brand-50 px-3 py-1 text-xs font-medium uppercase tracking-[0.14em] text-brand-600">
               Pricing
             </span>
-            <h2 className="mt-6 font-display text-3xl font-medium tracking-tight text-ink-50 sm:text-4xl">
-              <span className="bg-gradient-to-br from-ink-50 to-brand-300 bg-clip-text text-transparent">
-                $2,500
-              </span>{" "}
-              setup
-              <span className="text-ink-600"> • </span>
-              <span className="bg-gradient-to-br from-ink-50 to-brand-300 bg-clip-text text-transparent">
-                $897
-              </span>
-              /month
-              <span className="text-ink-600"> • </span>
-              <span className="bg-gradient-to-br from-ink-50 to-cyan-500 bg-clip-text text-transparent">
-                $200
-              </span>{" "}
-              per closed reactivated deal
+            <h2 className="mt-6 font-display text-4xl font-medium tracking-[-0.02em] text-grey-950 md:text-5xl">
+              $2,500 setup
+              <span className="text-grey-300"> • </span>
+              $897/month
+              <span className="text-grey-300"> • </span>
+              $200 per closed reactivated deal
             </h2>
           </div>
           <ul className="mt-10 space-y-4">
             {bullets.map((b) => (
               <li key={b} className="flex items-start gap-3">
-                <CheckCircle2 className="mt-0.5 h-5 w-5 flex-none text-mint-500" />
-                <span className="text-ink-200">{b}</span>
+                <CheckCircle2 className="mt-0.5 h-5 w-5 flex-none text-brand-500" />
+                <span className="text-grey-700">{b}</span>
               </li>
             ))}
           </ul>
           <div className="mt-10 flex justify-center">
             <Link
               href="https://cal.com/"
-              className="inline-flex items-center justify-center rounded-xl bg-brand-500 px-8 py-3 text-sm font-medium text-white shadow-[0_0_0_1px_rgba(124,92,255,0.6),0_12px_40px_-12px_rgba(124,92,255,0.7)] transition-colors hover:bg-brand-400"
+              className="inline-flex items-center justify-center rounded-lg bg-brand-500 px-6 py-2.5 text-sm font-medium text-white transition-colors hover:bg-brand-600"
             >
               Book a 15-min demo
             </Link>
@@ -328,19 +297,19 @@ function TrustStrip() {
     "ElevenLabs",
   ];
   return (
-    <section className="relative border-y border-white/[0.04] py-8">
+    <section className="border-y border-grey-200 bg-white py-8">
       <div className="mx-auto max-w-6xl px-6 text-center">
-        <p className="font-mono text-xs uppercase tracking-[0.2em] text-ink-500">
+        <p className="text-xs font-medium uppercase tracking-[0.14em] text-grey-500">
           Plugs into the software you already use.
         </p>
         <div className="mt-5 flex flex-wrap items-center justify-center gap-x-8 gap-y-3">
           {names.map((n, i) => (
             <div key={n} className="flex items-center gap-8">
-              <span className="font-mono text-sm uppercase tracking-[0.2em] text-ink-500">
+              <span className="text-sm uppercase tracking-[0.14em] text-grey-400">
                 {n}
               </span>
               {i < names.length - 1 && (
-                <span className="hidden text-ink-700 sm:inline" aria-hidden>
+                <span className="hidden text-grey-300 sm:inline" aria-hidden>
                   •
                 </span>
               )}
@@ -376,24 +345,24 @@ function FAQ() {
     },
   ];
   return (
-    <section className="relative py-20 sm:py-28">
+    <section className="bg-white py-24 sm:py-32">
       <div className="mx-auto max-w-3xl px-6">
-        <h2 className="font-display text-3xl font-medium tracking-tight text-ink-50 sm:text-5xl">
+        <h2 className="font-display text-3xl font-medium tracking-[-0.02em] text-grey-950 sm:text-5xl">
           Questions.
         </h2>
-        <div className="mt-10 space-y-3">
+        <div className="mt-12 space-y-3">
           {faqs.map((f) => (
             <details
               key={f.q}
-              className="group rounded-2xl border border-white/[0.06] bg-white/[0.02] backdrop-blur-xl transition-colors hover:border-brand-500/30"
+              className="group rounded-2xl border border-grey-200 bg-white transition-colors hover:border-grey-300"
             >
               <summary className="flex cursor-pointer items-center justify-between gap-4 p-6 text-left [&::-webkit-details-marker]:hidden">
-                <span className="font-display text-lg font-medium text-ink-50">
+                <span className="font-display text-base font-medium text-grey-950">
                   {f.q}
                 </span>
-                <ChevronDown className="h-5 w-5 flex-none text-brand-400 transition-transform group-open:rotate-180" />
+                <ChevronDown className="h-5 w-5 flex-none text-grey-400 transition-transform group-open:rotate-180" />
               </summary>
-              <p className="px-6 pb-6 text-base leading-relaxed text-ink-300">
+              <p className="px-6 pb-6 text-base leading-relaxed text-grey-600">
                 {f.a}
               </p>
             </details>
@@ -406,37 +375,35 @@ function FAQ() {
 
 function SiteFooter() {
   return (
-    <footer className="relative border-t border-white/[0.06] bg-ink-950">
+    <footer className="border-t border-grey-200 bg-grey-50">
       <div className="mx-auto max-w-6xl px-6 py-12">
         <div className="flex flex-col gap-6 md:flex-row md:items-start md:justify-between">
           <div className="max-w-md">
-            <div className="font-display text-xl font-semibold">
-              <span className="text-ink-50">salesy</span>
-              <span className="bg-gradient-to-r from-brand-400 to-cyan-500 bg-clip-text text-transparent">
-                AI
-              </span>
+            <div className="font-display text-xl font-semibold text-grey-950">
+              <span>salesy</span>
+              <span className="text-brand-500">AI</span>
             </div>
-            <p className="mt-3 text-sm text-ink-400">
+            <p className="mt-3 text-sm text-grey-600">
               salesyAI — The AI Operating Sales Enablement system for local home
               service based companies
             </p>
           </div>
-          <nav className="flex flex-wrap gap-x-6 gap-y-2 text-sm text-ink-300">
-            <Link href="/sign-in" className="hover:text-ink-50">
+          <nav className="flex flex-wrap gap-x-6 gap-y-2 text-sm text-grey-600">
+            <Link href="/sign-in" className="hover:text-grey-950">
               Sign In
             </Link>
-            <Link href="/sign-up" className="hover:text-ink-50">
+            <Link href="/sign-up" className="hover:text-grey-950">
               Sign Up
             </Link>
-            <Link href="#" className="hover:text-ink-50">
+            <Link href="#" className="hover:text-grey-950">
               Privacy
             </Link>
-            <Link href="#" className="hover:text-ink-50">
+            <Link href="#" className="hover:text-grey-950">
               Terms
             </Link>
           </nav>
         </div>
-        <div className="mt-10 border-t border-white/[0.06] pt-6 font-mono text-xs uppercase tracking-[0.2em] text-ink-500">
+        <div className="mt-10 border-t border-grey-200 pt-6 text-xs uppercase tracking-[0.14em] text-grey-400">
           © 2026 salesyAI
         </div>
       </div>

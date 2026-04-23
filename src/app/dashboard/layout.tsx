@@ -33,22 +33,23 @@ export default async function DashboardLayout({
   }
 
   return (
-    <div className="min-h-screen bg-ink-975">
-      <header className="sticky top-0 z-40 border-b border-white/[0.06] bg-ink-975/70 backdrop-blur-xl">
+    <div className="min-h-screen bg-white">
+      <header className="sticky top-0 z-40 border-b border-grey-200 bg-white/80 backdrop-blur-md">
         <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-4">
           <div className="flex items-center gap-6">
-            <Link href="/dashboard" className="font-display text-xl font-semibold tracking-tight">
-              <span className="text-ink-50">salesy</span>
-              <span className="bg-gradient-to-r from-brand-400 to-cyan-500 bg-clip-text text-transparent">
-                AI
-              </span>
+            <Link
+              href="/dashboard"
+              className="font-display text-xl font-semibold text-grey-950"
+            >
+              <span>salesy</span>
+              <span className="text-brand-500">AI</span>
             </Link>
             <nav className="flex items-center gap-4">
               {NAV_LINKS.map((link) => (
                 <Link
                   key={link.href}
                   href={link.href}
-                  className="text-sm text-ink-300 transition-colors hover:text-ink-50"
+                  className="text-sm font-medium text-grey-600 transition-colors hover:text-grey-950"
                 >
                   {link.label}
                 </Link>

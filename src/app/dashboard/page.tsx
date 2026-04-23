@@ -8,16 +8,6 @@ import { RecentActivity } from "@/components/dashboard/recent-activity";
 import { Button } from "@/components/ui/button";
 import { Settings } from "lucide-react";
 
-const GRID_BACKDROP_STYLE = {
-  backgroundImage:
-    "radial-gradient(circle at 1px 1px, rgba(195, 202, 224, 0.22) 1px, transparent 0)",
-  backgroundSize: "56px 56px",
-  WebkitMaskImage:
-    "radial-gradient(ellipse at 50% 0%, black 40%, transparent 80%)",
-  maskImage:
-    "radial-gradient(ellipse at 50% 0%, black 40%, transparent 80%)",
-} as const;
-
 interface KPIs {
   window: string;
   kpis: {
@@ -90,18 +80,13 @@ export default function DashboardPage() {
     kpis && kpis.kpis.inbound_calls.answer_rate < 100;
 
   return (
-    <div className="relative space-y-8">
-      <div
-        aria-hidden
-        className="pointer-events-none fixed inset-0 -z-10 opacity-[0.35]"
-        style={GRID_BACKDROP_STYLE}
-      />
+    <div className="space-y-8">
       <div className="flex items-center justify-between">
         <div>
-          <div className="font-mono text-xs uppercase tracking-[0.2em] text-brand-400">
+          <div className="text-xs font-medium uppercase tracking-[0.14em] text-brand-500">
             Overview
           </div>
-          <h1 className="mt-2 bg-gradient-to-br from-ink-50 to-brand-300 bg-clip-text font-display text-4xl font-medium tracking-tight text-transparent">
+          <h1 className="mt-2 font-display text-4xl font-medium tracking-[-0.02em] text-grey-950">
             Dashboard
           </h1>
         </div>
@@ -116,11 +101,11 @@ export default function DashboardPage() {
       </div>
 
       {loading ? (
-        <div className="rounded-2xl border border-white/[0.06] bg-white/[0.02] p-8 backdrop-blur-xl">
-          <div className="font-mono text-xs uppercase tracking-[0.2em] text-brand-400">
+        <div className="rounded-2xl border border-grey-200 bg-white p-8">
+          <div className="text-xs font-medium uppercase tracking-[0.14em] text-brand-500">
             Loading
           </div>
-          <div className="mt-2 text-ink-300">Fetching your KPIs...</div>
+          <div className="mt-2 text-grey-600">Fetching your KPIs...</div>
         </div>
       ) : kpis ? (
         <>
@@ -177,17 +162,17 @@ export default function DashboardPage() {
           </div>
 
           {answerRateWarning && (
-            <div className="rounded-2xl border border-red-500/40 bg-red-500/10 p-5 text-red-200 backdrop-blur-xl">
-              <div className="font-mono text-xs uppercase tracking-[0.2em] text-red-300">
+            <div className="rounded-2xl border border-red-200 bg-red-50 p-5 text-red-700">
+              <div className="text-xs font-medium uppercase tracking-[0.14em] text-red-600">
                 Alert
               </div>
               <div className="mt-2">
                 Answer rate is below 100%. Only{" "}
-                <span className="bg-gradient-to-br from-ink-50 to-brand-300 bg-clip-text font-display font-medium text-transparent">
+                <span className="font-display font-medium text-grey-950">
                   {kpis.kpis.inbound_calls.answered}
                 </span>{" "}
                 of{" "}
-                <span className="bg-gradient-to-br from-ink-50 to-brand-300 bg-clip-text font-display font-medium text-transparent">
+                <span className="font-display font-medium text-grey-950">
                   {kpis.kpis.inbound_calls.received}
                 </span>{" "}
                 calls were answered.
@@ -198,11 +183,11 @@ export default function DashboardPage() {
           <RecentActivity />
         </>
       ) : (
-        <div className="rounded-2xl border border-white/[0.06] bg-white/[0.02] p-8 backdrop-blur-xl">
-          <div className="font-mono text-xs uppercase tracking-[0.2em] text-brand-400">
+        <div className="rounded-2xl border border-grey-200 bg-white p-8">
+          <div className="text-xs font-medium uppercase tracking-[0.14em] text-brand-500">
             No data yet
           </div>
-          <div className="mt-2 text-ink-300">
+          <div className="mt-2 text-grey-600">
             Once your n8n workflows start sending events, they&apos;ll appear
             here.
           </div>
