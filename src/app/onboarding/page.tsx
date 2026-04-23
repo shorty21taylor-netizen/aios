@@ -140,7 +140,7 @@ export default function OnboardingWizard() {
                     )}
                   />
                   {errors.business_name && (
-                    <p className="text-red-400 text-sm mt-1">{errors.business_name.message}</p>
+                    <p className="text-red-400 text-sm mt-1">{errors.business_name.message as string}</p>
                   )}
                 </div>
 
@@ -171,7 +171,7 @@ export default function OnboardingWizard() {
                     )}
                   />
                   {errors.vertical && (
-                    <p className="text-red-400 text-sm mt-1">{errors.vertical.message}</p>
+                    <p className="text-red-400 text-sm mt-1">{errors.vertical.message as string}</p>
                   )}
                 </div>
 
@@ -210,7 +210,7 @@ export default function OnboardingWizard() {
                     )}
                   />
                   {errors.phone_number && (
-                    <p className="text-red-400 text-sm mt-1">{errors.phone_number.message}</p>
+                    <p className="text-red-400 text-sm mt-1">{errors.phone_number.message as string}</p>
                   )}
                 </div>
 
@@ -231,7 +231,7 @@ export default function OnboardingWizard() {
                     )}
                   />
                   {errors.company_address && (
-                    <p className="text-red-400 text-sm mt-1">{errors.company_address.message}</p>
+                    <p className="text-red-400 text-sm mt-1">{errors.company_address.message as string}</p>
                   )}
                 </div>
 
@@ -280,7 +280,7 @@ export default function OnboardingWizard() {
                   />
                   {errors.service_area_description && (
                     <p className="text-red-400 text-sm mt-1">
-                      {errors.service_area_description.message}
+                      {errors.service_area_description.message as string}
                     </p>
                   )}
                 </div>
