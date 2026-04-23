@@ -274,7 +274,7 @@ export async function GET(req: NextRequest) {
       const val = b.estimatedValue ? parseFloat(b.estimatedValue) : 0;
       return sum + val;
     }, 0);
-    const closedRevenue = parseFloat(closedDealsResult[0]?.total || 0);
+    const closedRevenue = parseFloat(closedDealsResult[0]?.total || "0");
 
     const priorCallsReceived = priorCallsReceivedResult[0]?.count || 0;
     const priorCallsAnswered = priorCallsAnsweredResult[0]?.count || 0;
@@ -284,7 +284,7 @@ export async function GET(req: NextRequest) {
     const priorEmailBooked = priorEmailBookedResult[0]?.count || 0;
     const priorEmailReplies = priorEmailRepliesResult[0]?.count || 0;
     const priorQuotesSent = priorQuotesSentResult[0]?.count || 0;
-    const priorClosedRevenue = parseFloat(priorClosedDealsResult[0]?.total || 0);
+    const priorClosedRevenue = parseFloat(priorClosedDealsResult[0]?.total || "0");
 
     const calculateDelta = (current: number, prior: number): number => {
       if (prior === 0) return current > 0 ? 100 : 0;
