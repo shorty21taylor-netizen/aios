@@ -1,7 +1,7 @@
 import { z } from 'zod';
 
 // Hours schema for each day
-const HourSchema = z.object({
+export const HourSchema = z.object({
   open: z.string().regex(/^\d{2}:\d{2}$/).optional(),
   close: z.string().regex(/^\d{2}:\d{2}$/).optional(),
 });
