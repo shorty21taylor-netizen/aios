@@ -10,6 +10,8 @@ html,
 body {
   background-color: #FFFFFF;
   color: #0A0A0A;
+  -webkit-font-smoothing: antialiased;
+  overflow-x: hidden;
 }
 
 * {
@@ -21,4 +23,186 @@ body {
 button:disabled {
   opacity: 0.5;
   cursor: not-allowed;
+}
+
+/* ----- Landing — ambient tint (fixed behind everything) ----- */
+.landing-ambient::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  background-image:
+    radial-gradient(circle at 15% 0%, rgba(0, 154, 73, 0.07), transparent 45%),
+    radial-gradient(circle at 85% 8%, rgba(0, 154, 73, 0.04), transparent 42%),
+    radial-gradient(circle at 50% 65%, rgba(10, 10, 10, 0.03), transparent 55%);
+  z-index: 0;
+  pointer-events: none;
+}
+
+/* ----- Hero mesh gradient ----- */
+.hero-mesh {
+  position: absolute;
+  inset: -120px -40px auto -40px;
+  height: 820px;
+  background:
+    radial-gradient(40% 50% at 18% 30%, rgba(0, 154, 73, 0.16), transparent 70%),
+    radial-gradient(45% 45% at 78% 28%, rgba(0, 154, 73, 0.10), transparent 70%),
+    radial-gradient(55% 55% at 50% 80%, rgba(10, 10, 10, 0.04), transparent 70%);
+  filter: blur(50px) saturate(120%);
+  opacity: 0.95;
+  z-index: 0;
+  animation: drift 14s ease-in-out infinite alternate;
+  pointer-events: none;
+}
+
+/* ----- Strike animation on headline ----- */
+.strike-wrap {
+  position: relative;
+  display: inline-block;
+}
+.strike-wrap::after {
+  content: "";
+  position: absolute;
+  left: -6%;
+  right: -6%;
+  top: 54%;
+  height: 3px;
+  background: linear-gradient(90deg, transparent, #009A49, transparent);
+  transform: scaleX(0);
+  transform-origin: left center;
+  animation: strike 1.4s 0.7s forwards ease-out;
+}
+
+/* ----- Marquee ----- */
+.marquee {
+  display: flex;
+  overflow: hidden;
+  -webkit-mask-image: linear-gradient(90deg, transparent, #000 15%, #000 85%, transparent);
+  mask-image: linear-gradient(90deg, transparent, #000 15%, #000 85%, transparent);
+}
+.marquee-track {
+  display: flex;
+  gap: 64px;
+  padding-right: 64px;
+  animation: scroll-x 30s linear infinite;
+  white-space: nowrap;
+}
+
+/* ----- Pricing conic-border ring ----- */
+.price-ring {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+}
+.price-ring::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  padding: 1.5px;
+  background: conic-gradient(from 0deg, #009A49, #D4D4D1, #007038, #00B858, #009A49);
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+          mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+          mask-composite: exclude;
+  animation: spin 14s linear infinite;
+  pointer-events: none;
+  opacity: 0.95;
+  z-index: 1;
+}
+.price-ring::after {
+  content: "";
+  position: absolute;
+  inset: 1.5px;
+  border-radius: inherit;
+  background: radial-gradient(520px circle at 30% 0%, rgba(0, 154, 73, 0.08), transparent 60%), #FFFFFF;
+  z-index: 0;
+}
+.price-ring > * {
+  position: relative;
+  z-index: 2;
+}
+
+/* ----- Scroll reveal ----- */
+.reveal {
+  opacity: 0;
+  transform: translateY(20px);
+  transition: opacity 0.9s cubic-bezier(0.2, 0.8, 0.2, 1), transform 0.9s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+.reveal.in {
+  opacity: 1;
+  transform: none;
+}
+.reveal[data-d="1"] { transition-delay: 0.08s; }
+.reveal[data-d="2"] { transition-delay: 0.18s; }
+.reveal[data-d="3"] { transition-delay: 0.28s; }
+
+/* ----- Pain card cursor spotlight ----- */
+.pain-card {
+  position: relative;
+  overflow: hidden;
+}
+.pain-card::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: radial-gradient(360px circle at var(--mx, 50%) var(--my, 50%), rgba(0, 154, 73, 0.10), transparent 42%);
+  opacity: 0;
+  transition: opacity 0.3s;
+  pointer-events: none;
+}
+.pain-card:hover::before {
+  opacity: 1;
+}
+
+/* ----- Primary CTA sheen ----- */
+.btn-sheen {
+  position: relative;
+  overflow: hidden;
+}
+.btn-sheen::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(120deg, transparent 30%, rgba(255, 255, 255, 0.4) 50%, transparent 70%);
+  transform: translateX(-130%);
+  transition: transform 0.9s ease;
+  pointer-events: none;
+}
+.btn-sheen:hover::after {
+  transform: translateX(130%);
+}
+
+/* ----- Link under ----- */
+.link-under {
+  position: relative;
+}
+.link-under::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  bottom: -6px;
+  height: 1px;
+  width: 0;
+  background: #009A49;
+  transition: width 0.28s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.link-under:hover::after {
+  width: 100%;
+}
+
+/* ----- Keyframes (also in tailwind config; these cover raw CSS usage) ----- */
+@keyframes drift {
+  0% { transform: translate3d(-20px, -10px, 0) scale(1); }
+  100% { transform: translate3d(30px, 20px, 0) scale(1.05); }
+}
+@keyframes strike {
+  to { transform: scaleX(1); }
+}
+@keyframes spin {
+  to { transform: rotate(1turn); }
+}
+@keyframes scroll-x {
+  0% { transform: translateX(0); }
+  100% { transform: translateX(-50%); }
 }

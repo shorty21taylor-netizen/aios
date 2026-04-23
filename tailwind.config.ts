@@ -9,8 +9,13 @@ const config: Config = {
   theme: {
     extend: {
       fontFamily: {
-        sans: ["var(--font-inter)"],
-        display: ["var(--font-space-grotesk)"],
+        sans: ["Inter", "-apple-system", "BlinkMacSystemFont", "Segoe UI", "Roboto", "sans-serif"],
+        display: ['"Instrument Serif"', "Cormorant Garamond", "Playfair Display", "Georgia", "serif"],
+        serif: ['"Instrument Serif"', "Georgia", "serif"],
+        mono: ['"JetBrains Mono"', "ui-monospace", "SF Mono", "Menlo", "Consolas", "monospace"],
+      },
+      letterSpacing: {
+        eyebrow: "0.22em",
       },
       colors: {
         brand: {
@@ -24,6 +29,7 @@ const config: Config = {
           700: "#006B3C",
           800: "#00502C",
           900: "#00331D",
+          wash: "rgba(0,154,73,0.08)",
         },
         grey: {
           50: "#FAFAF9",
@@ -64,6 +70,29 @@ const config: Config = {
           900: "#0c4a6e",
           950: "#082f49",
         },
+      },
+      keyframes: {
+        drift: {
+          "0%": { transform: "translate3d(-20px, -10px, 0) scale(1)" },
+          "100%": { transform: "translate3d(30px, 20px, 0) scale(1.05)" },
+        },
+        strike: {
+          from: { transform: "scaleX(0)" },
+          to: { transform: "scaleX(1)" },
+        },
+        spin: {
+          to: { transform: "rotate(1turn)" },
+        },
+        "scroll-x": {
+          "0%": { transform: "translateX(0)" },
+          "100%": { transform: "translateX(-50%)" },
+        },
+      },
+      animation: {
+        drift: "drift 14s ease-in-out infinite alternate",
+        strike: "strike 1.4s 0.7s forwards ease-out",
+        "spin-slow": "spin 14s linear infinite",
+        "scroll-x": "scroll-x 30s linear infinite",
       },
     },
   },
