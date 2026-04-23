@@ -43,7 +43,7 @@ function validateProfileComplete(profile: any): { valid: boolean; missing: strin
   };
 }
 
-export async function POST(req: NextRequest) {
+export async function POST(_req: NextRequest) {
   try {
     const { orgId } = await auth();
     if (!orgId) {
