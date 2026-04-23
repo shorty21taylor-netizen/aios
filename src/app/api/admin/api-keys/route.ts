@@ -3,7 +3,7 @@ import { auth } from "@clerk/nextjs/server";
 import { requireWorkspace } from "@/lib/auth/workspace";
 import { db } from "@/lib/db";
 import { workspaceApiKeys } from "@/db/schema";
-import { eq, and } from "drizzle-orm";
+import { eq } from "drizzle-orm";
 import { generateApiKey, hashApiKey } from "@/lib/api-keys/generate";
 import { z } from "zod";
 
