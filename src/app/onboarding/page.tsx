@@ -56,7 +56,7 @@ export default function OnboardingWizard() {
   const {
     control,
     handleSubmit,
-    watch,
+
     formState: { errors },
 
   } = useForm({
@@ -64,7 +64,7 @@ export default function OnboardingWizard() {
     defaultValues: profileData,
   });
 
-  const watchedValues = watch();
+
 
   const saveStep = async (data: any) => {
     setLoading(true);
