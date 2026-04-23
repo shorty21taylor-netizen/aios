@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@clerk/nextjs/server';
-import { updateProfile, mergeProfileDetails, getProfileByWorkspaceId } from '@/lib/profile/queries';
+import { updateProfile, getProfileByWorkspaceId } from '@/lib/profile/queries';
 import { db } from '@/lib/db';
 import { workspaces } from '@/db/schema';
 import { eq } from 'drizzle-orm';
