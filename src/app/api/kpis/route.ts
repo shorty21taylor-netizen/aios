@@ -276,7 +276,6 @@ export async function GET(req: NextRequest) {
     }, 0);
     const closedRevenue = parseFloat(closedDealsResult[0]?.total || "0");
 
-    const priorCallsReceived = priorCallsReceivedResult[0]?.count || 0;
     const priorCallsAnswered = priorCallsAnsweredResult[0]?.count || 0;
     const priorCallsBooked = priorCallsBookedResult[0]?.count || 0;
     const priorSmsSent = priorSmsSentResult[0]?.count || 0;
