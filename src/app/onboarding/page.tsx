@@ -314,7 +314,7 @@ export default function OnboardingWizard() {
 
                 <p className="text-sm text-slate-400 mt-4">Business Hours:</p>
                 <div className="grid grid-cols-2 gap-4">
-                  {['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].map((day, i) => (
+                  {['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].map((day) => (
                     <div key={day}>
                       <p className="text-xs text-slate-300 mb-1">{day}</p>
                       <div className="flex gap-2">
