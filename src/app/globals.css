@@ -6,20 +6,44 @@
   color-scheme: dark;
 }
 
-html {
-  background-color: #0A0A0A;
-  color: #F5F5F2;
-}
-
+html,
 body {
-  background-color: #0A0A0A;
-  color: #F5F5F2;
+  background-color: #05060A;
+  color: #F5F7FF;
 }
 
 * {
   margin: 0;
   padding: 0;
   box-sizing: border-box;
+}
+
+::selection {
+  background-color: rgba(124, 92, 255, 0.35);
+  color: #F5F7FF;
+}
+
+::-webkit-scrollbar {
+  width: 12px;
+  height: 12px;
+}
+
+::-webkit-scrollbar-track {
+  background: #05060A;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #1F2233;
+  border-radius: 8px;
+  border: 2px solid #05060A;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #2A2F45;
+}
+
+* {
+  scrollbar-color: #1F2233 #05060A;
 }
 
 button:disabled {
