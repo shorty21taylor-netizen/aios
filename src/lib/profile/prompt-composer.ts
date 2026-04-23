@@ -9,7 +9,7 @@
  * Keep this in lockstep with the JS version. If you change one, change the other.
  */
 
-import type { WorkspaceProfile } from "./schemas";
+import type { Profile } from "./schemas";
 
 export type PromptKind =
   | "sms_enrich"
@@ -29,7 +29,7 @@ export interface ComposedPrompt {
 
 interface ComposeOptions {
   kind: PromptKind;
-  profile: Partial<WorkspaceProfile> & { details?: Record<string, unknown> };
+  profile: Partial<Profile> & { details?: Record<string, unknown> };
   userMessage?: string;
   model?: string;
   max_tokens?: number;
