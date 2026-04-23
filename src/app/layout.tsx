@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Inter, Space_Grotesk, JetBrains_Mono } from "next/font/google";
+import { Inter, Space_Grotesk } from "next/font/google";
 import { ClerkProvider } from "@clerk/nextjs";
 import "./globals.css";
 
@@ -15,12 +15,6 @@ const spaceGrotesk = Space_Grotesk({
   display: "swap",
 });
 
-const jetbrainsMono = JetBrains_Mono({
-  subsets: ["latin"],
-  variable: "--font-jetbrains-mono",
-  display: "swap",
-});
-
 export const metadata: Metadata = {
   title: "salesyAI — AI Operating Sales Enablement",
   description: "The AI Operating Sales Enablement system for local home service based companies",
@@ -33,11 +27,8 @@ export default function RootLayout({
 }) {
   return (
     <ClerkProvider>
-      <html
-        lang="en"
-        className={`${inter.variable} ${spaceGrotesk.variable} ${jetbrainsMono.variable}`}
-      >
-        <body className="bg-ink-975 text-ink-50 font-sans antialiased">
+      <html lang="en" className={`${inter.variable} ${spaceGrotesk.variable}`}>
+        <body className="bg-white text-grey-900 font-sans antialiased">
           {children}
         </body>
       </html>
