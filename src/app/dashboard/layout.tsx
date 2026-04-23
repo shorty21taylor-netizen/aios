@@ -16,10 +16,14 @@ export default async function DashboardLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const { orgId } = await auth();
+  const { userId, orgId } = await auth();
+
+  if (!userId) {
+    redirect("/sign-in");
+  }
 
   if (!orgId) {
-    redirect("/sign-in");
+    redirect("/create-organization");
   }
 
   const workspace = await getWorkspaceForAuth();
