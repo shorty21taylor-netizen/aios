@@ -6,7 +6,7 @@ import { workspaceApiKeys } from "@/db/schema";
 import { eq, and } from "drizzle-orm";
 
 export async function DELETE(
-  req: NextRequest,
+  _req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
