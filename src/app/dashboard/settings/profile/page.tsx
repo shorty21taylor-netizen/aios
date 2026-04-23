@@ -29,7 +29,7 @@ export default function ProfileSettingsPage() {
     loadProfile();
   }, []);
 
-  const handleSave = async (section: number) => {
+  const handleSave = async (_section: number) => {
     setSaving(true);
     try {
       const res = await fetch('/api/profile', {
