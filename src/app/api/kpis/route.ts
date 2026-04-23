@@ -60,7 +60,7 @@ export async function GET(req: NextRequest) {
       quotesSentResult,
       bookingsList,
       closedDealsResult,
-      priorCallsReceivedResult,
+      ,
       priorCallsAnsweredResult,
       priorCallsBookedResult,
       priorSmsSentResult,
