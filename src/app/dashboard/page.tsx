@@ -82,7 +82,9 @@ export default function DashboardPage() {
   return (
     <div className="space-y-8">
       <div className="flex items-center justify-between">
-        <h1 className="text-3xl font-bold text-white">Dashboard</h1>
+        <h1 className="font-display text-3xl font-bold tracking-tight text-ink-50">
+          <span className="text-brand-500">Dashboard</span>
+        </h1>
         <div className="flex gap-4 items-center">
           <TimeWindowSelector current={timeWindow} onChange={setTimeWindow} />
           <Link href="/dashboard/settings">
@@ -94,7 +96,9 @@ export default function DashboardPage() {
       </div>
 
       {loading ? (
-        <div className="text-slate-400">Loading KPIs...</div>
+        <div className="rounded-lg border border-ink-800 bg-ink-900 p-6 text-ink-400">
+          <span className="font-display text-brand-400">Loading</span> KPIs...
+        </div>
       ) : kpis ? (
         <>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -151,15 +155,25 @@ export default function DashboardPage() {
 
           {answerRateWarning && (
             <div className="bg-red-900 border border-red-700 rounded p-4 text-red-200">
-              Alert: Answer rate is below 100%. Only {kpis.kpis.inbound_calls.answered} of{" "}
-              {kpis.kpis.inbound_calls.received} calls were answered.
+              Alert: Answer rate is below 100%. Only{" "}
+              <span className="font-display font-semibold text-brand-400">
+                {kpis.kpis.inbound_calls.answered}
+              </span>{" "}
+              of{" "}
+              <span className="font-display font-semibold text-brand-400">
+                {kpis.kpis.inbound_calls.received}
+              </span>{" "}
+              calls were answered.
             </div>
           )}
 
           <RecentActivity />
         </>
       ) : (
-        <div className="text-slate-400">No data available</div>
+        <div className="rounded-lg border border-ink-800 bg-ink-900 p-6 text-ink-400">
+          No data available yet — once your n8n workflows start sending
+          events, they&apos;ll appear here.
+        </div>
       )}
     </div>
   );
