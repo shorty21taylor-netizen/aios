@@ -32,14 +32,11 @@ export async function GET(req: NextRequest) {
     }
 
     let priorStartTime: Date;
-    let priorEndTime: Date;
 
     if (window === "7d") {
       priorStartTime = new Date(startTime.getTime() - 7 * 24 * 60 * 60 * 1000);
-      priorEndTime = startTime;
     } else if (window === "30d") {
       priorStartTime = new Date(startTime.getTime() - 30 * 24 * 60 * 60 * 1000);
-      priorEndTime = startTime;
     } else {
       const yesterday = new Date(startTime);
       yesterday.setDate(yesterday.getDate() - 1);
@@ -48,7 +45,6 @@ export async function GET(req: NextRequest) {
         yesterday.getMonth(),
         yesterday.getDate()
       );
-      priorEndTime = new Date(startTime);
     }
 
     const wsId = workspace.id;
