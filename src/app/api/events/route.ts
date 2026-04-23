@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
-import { events, bookings, workspaceApiKeys, workspaces } from "@/db/schema";
+import { events, bookings, workspaceApiKeys } from "@/db/schema";
 import { eq, and } from "drizzle-orm";
 import { EventPayloadSchema } from "@/lib/events/types";
 import { hashApiKey } from "@/lib/api-keys/generate";
