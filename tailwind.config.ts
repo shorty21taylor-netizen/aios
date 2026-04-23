@@ -8,7 +8,42 @@ const config: Config = {
   ],
   theme: {
     extend: {
+      fontFamily: {
+        sans: ["var(--font-inter)", "system-ui", "sans-serif"],
+        display: [
+          "var(--font-space-grotesk)",
+          "var(--font-inter)",
+          "system-ui",
+          "sans-serif",
+        ],
+      },
       colors: {
+        brand: {
+          50: "#E6F7EE",
+          100: "#C2EBD2",
+          200: "#9BDCB6",
+          300: "#6FCC97",
+          400: "#3CCB7F",
+          500: "#009A49",
+          600: "#007A38",
+          700: "#006B3C",
+          800: "#004F2A",
+          900: "#003A1F",
+          950: "#00120A",
+        },
+        ink: {
+          50: "#F5F5F2",
+          100: "#F0F0ED",
+          200: "#E5E5E2",
+          300: "#D4D4D4",
+          400: "#A3A3A3",
+          500: "#737373",
+          600: "#404040",
+          700: "#262626",
+          800: "#1A1A1A",
+          900: "#111111",
+          950: "#0A0A0A",
+        },
         emerald: {
           50: "#f0fdf4",
           100: "#dcfce7",
