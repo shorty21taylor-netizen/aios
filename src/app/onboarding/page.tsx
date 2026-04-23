@@ -24,7 +24,7 @@ const TIMEZONES = [
   'UTC',
 ];
 
-type Step1FormData = Record<string, any>;
+
 
 export default function OnboardingWizard() {
   const router = useRouter();
