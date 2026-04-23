@@ -2,6 +2,7 @@ import { db } from "../src/lib/db";
 import { workspaces, workspaceApiKeys, events } from "../src/db/schema";
 import { generateApiKey, hashApiKey } from "../src/lib/api-keys/generate";
 import { randomUUID } from "crypto";
+import { eq } from "drizzle-orm";
 
 async function seed() {
   try {
@@ -29,7 +30,7 @@ async function seed() {
     const ws = wsResult.length > 0 ? wsResult[0] : (await db
       .select()
       .from(workspaces)
-      .where((w) => w.clerkOrgId === "test-org-123")
+      .where(eq(workspaces.clerkOrgId, "test-org-123"))
       .limit(1))[0];
 
     const rawKey = generateApiKey();
