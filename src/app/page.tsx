@@ -434,7 +434,7 @@ function Pricing() {
 
           <div className="mt-9 flex flex-wrap items-center gap-3">
             <Link
-              href="https://cal.com/"
+              href="/sign-up?redirect_url=%2Fcheckout"
               className="btn-sheen inline-flex items-center gap-2.5 rounded-xl bg-gradient-to-br from-brand-500 to-brand-700 px-6 py-4 text-[15px] font-semibold text-white shadow-[0_1px_0_rgba(255,255,255,0.35)_inset,0_22px_46px_-18px_rgba(0,154,73,0.7)] transition-shadow hover:shadow-[0_1px_0_rgba(255,255,255,0.35)_inset,0_26px_52px_-16px_rgba(0,154,73,0.8)]"
             >
               Claim founding spot <span>→</span>

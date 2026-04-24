@@ -37,6 +37,19 @@ export default async function DashboardLayout({
     redirect("/onboarding");
   }
 
+  // Subscription gate — bypass in dev, for superadmin, or if Stripe isn't configured yet.
+  const bypassBilling =
+    process.env.NODE_ENV !== "production" ||
+    process.env.BILLING_GATE_DISABLED === "true" ||
+    !process.env.STRIPE_SECRET_KEY;
+  const allowedStatuses = new Set(["active", "trialing", "past_due"]);
+  if (
+    !bypassBilling &&
+    (!workspace.subscriptionStatus || !allowedStatuses.has(workspace.subscriptionStatus))
+  ) {
+    redirect("/checkout");
+  }
+
   return (
     <div className="min-h-screen bg-white">
       <header className="sticky top-0 z-40 border-b border-grey-200 bg-white/80 backdrop-blur-md">
