@@ -109,6 +109,46 @@ export default function DashboardPage() {
         </div>
       ) : kpis ? (
         <>
+          {(() => {
+            const totalSignals =
+              kpis.kpis.inbound_calls.received +
+              kpis.kpis.calls_to_bookings.count +
+              kpis.kpis.sms_sent_from_inquiries.count +
+              kpis.kpis.quotes_sent.count +
+              kpis.kpis.sms_to_bookings.count +
+              kpis.kpis.email_to_bookings.count +
+              kpis.kpis.email_replies.count;
+            if (totalSignals > 0) return null;
+            return (
+              <div className="rounded-2xl border border-brand-300 bg-gradient-to-br from-brand-50 to-white p-8">
+                <div className="text-xs font-mono font-semibold uppercase tracking-[0.18em] text-brand-700">
+                  Waiting for your first signal
+                </div>
+                <h2 className="mt-2 font-display text-2xl font-medium tracking-tight text-grey-950">
+                  Connect n8n to start capturing calls, SMS, and bookings.
+                </h2>
+                <p className="mt-3 max-w-2xl text-sm leading-relaxed text-grey-700">
+                  salesyAI listens for events posted to <code className="rounded bg-grey-100 px-1.5 py-0.5 text-xs">POST /api/events/ingest</code>.
+                  Generate a workspace API key, then import the 8 n8n workflows — the first call, text, or
+                  missed-call will light these cards up.
+                </p>
+                <div className="mt-5 flex flex-wrap items-center gap-3">
+                  <Link
+                    href="/dashboard/settings/api-keys"
+                    className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-br from-brand-500 to-brand-700 px-5 py-3 text-sm font-semibold text-white shadow-sm transition-shadow hover:shadow"
+                  >
+                    Generate API key <span aria-hidden>→</span>
+                  </Link>
+                  <Link
+                    href="/dashboard/status"
+                    className="inline-flex items-center gap-2 rounded-xl border border-grey-300 bg-white px-5 py-3 text-sm font-medium text-grey-700 shadow-sm transition-colors hover:bg-grey-50"
+                  >
+                    Check readiness
+                  </Link>
+                </div>
+              </div>
+            );
+          })()}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <KPICard
               title="Inbound Calls"
