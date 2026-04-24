@@ -9,6 +9,7 @@ const NAV_LINKS: Array<{ href: string; label: string }> = [
   { href: "/dashboard", label: "Overview" },
   { href: "/dashboard/agents", label: "Agents" },
   { href: "/dashboard/settings/profile", label: "Profile" },
+  { href: "/dashboard/status", label: "Status" },
 ];
 
 export default async function DashboardLayout({
